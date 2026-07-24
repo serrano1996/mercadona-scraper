@@ -22,7 +22,6 @@ Dependencias:
 
 import argparse
 import json
-import logging
 import sys
 
 try:
@@ -31,6 +30,7 @@ except ImportError:
     sys.exit("ERROR: Falta la librería 'requests'. Ejecuta: pip install requests")
 
 from .exceptions import MercadonaScraperError
+from .logging_config import configure_logging
 from .scraper import MercadonaScraper
 
 
@@ -91,11 +91,7 @@ Ejemplos:
 
     args = parser.parse_args()
 
-    logging.basicConfig(
-        level=logging.DEBUG if args.verbose else logging.INFO,
-        format="%(levelname)s: %(message)s",
-        stream=sys.stderr,
-    )
+    configure_logging(verbose=args.verbose)
 
     if not args.postal_code.isdigit() or len(args.postal_code) != 5:
         parser.error(

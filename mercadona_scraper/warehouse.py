@@ -3,9 +3,9 @@ import re
 
 import requests
 
-from config import API_URL, POSTAL_TO_WH
-from exceptions import WarehouseError
-from http_client import HttpClient
+from .config import API_URL, POSTAL_TO_WH
+from .exceptions import WarehouseError
+from .http_client import HttpClient
 
 logger = logging.getLogger(__name__)
 

@@ -14,7 +14,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from strategies.playwright import PlaywrightStrategy
+from mercadona_scraper.strategies.playwright import PlaywrightStrategy
 
 
 def _strategy(term="leche") -> PlaywrightStrategy:

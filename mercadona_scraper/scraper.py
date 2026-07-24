@@ -2,14 +2,14 @@ import logging
 
 import requests
 
-from exceptions import APISchemaError, SearchFailedError, WarehouseError  # noqa: F401
-from formatters import ProductFormatter
-from http_client import HttpClient
-from models import ProductResult, ScraperResult
-from strategies.algolia import AlgoliaStrategy
-from strategies.api import ApiStrategy
-from strategies.playwright import PlaywrightStrategy
-from warehouse import WarehouseResolver
+from .exceptions import APISchemaError, SearchFailedError, WarehouseError  # noqa: F401
+from .formatters import ProductFormatter
+from .http_client import HttpClient
+from .models import ProductResult, ScraperResult
+from .strategies.algolia import AlgoliaStrategy
+from .strategies.api import ApiStrategy
+from .strategies.playwright import PlaywrightStrategy
+from .warehouse import WarehouseResolver
 
 logger = logging.getLogger(__name__)
 

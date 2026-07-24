@@ -1,4 +1,4 @@
-from models import ProductResult, ScraperResult, SearchMeta
+from mercadona_scraper.models import ProductResult, ScraperResult, SearchMeta
 
 
 def _build_result() -> ScraperResult:

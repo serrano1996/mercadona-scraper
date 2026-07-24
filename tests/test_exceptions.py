@@ -1,4 +1,4 @@
-from exceptions import (
+from mercadona_scraper.exceptions import (
     APISchemaError,
     MercadonaScraperError,
     SearchFailedError,

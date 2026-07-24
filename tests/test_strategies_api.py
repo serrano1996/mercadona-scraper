@@ -3,8 +3,8 @@ from unittest.mock import MagicMock
 import pytest
 import requests
 
-from exceptions import APISchemaError
-from strategies.api import ApiStrategy
+from mercadona_scraper.exceptions import APISchemaError
+from mercadona_scraper.strategies.api import ApiStrategy
 
 
 def _resp(json_data):
@@ -95,7 +95,7 @@ def test_subcategory_products_flattens_products_with_category_name():
 
 
 def test_scan_mid_category_returns_empty_list_on_request_exception(monkeypatch):
-    monkeypatch.setattr("strategies.api.time.sleep", lambda s: None)
+    monkeypatch.setattr("mercadona_scraper.strategies.api.time.sleep", lambda s: None)
     client = MagicMock()
     client.get.side_effect = requests.RequestException("network down")
     strategy = ApiStrategy("leche", client)
@@ -106,7 +106,7 @@ def test_scan_mid_category_returns_empty_list_on_request_exception(monkeypatch):
 
 
 def test_scan_mid_category_filters_by_term(monkeypatch):
-    monkeypatch.setattr("strategies.api.time.sleep", lambda s: None)
+    monkeypatch.setattr("mercadona_scraper.strategies.api.time.sleep", lambda s: None)
     client = MagicMock()
     client.get.return_value = _resp(
         {
@@ -134,7 +134,7 @@ def test_scan_mid_category_filters_by_term(monkeypatch):
 
 
 def test_search_aggregates_matches_across_nested_categories_case_insensitive(monkeypatch):
-    monkeypatch.setattr("strategies.api.time.sleep", lambda s: None)
+    monkeypatch.setattr("mercadona_scraper.strategies.api.time.sleep", lambda s: None)
 
     def fake_get(url, timeout=15, **kwargs):
         if "categories/?lang=es" in url:

@@ -5,7 +5,7 @@ import requests
 from .exceptions import APISchemaError, SearchFailedError, WarehouseError  # noqa: F401
 from .formatters import ProductFormatter
 from .http_client import HttpClient
-from .models import ProductResult, ScraperResult
+from .models import ScraperResult
 from .strategies.algolia import AlgoliaStrategy
 from .strategies.api import ApiStrategy
 from .strategies.playwright import PlaywrightStrategy
@@ -44,9 +44,6 @@ class MercadonaScraper:
     def get_warehouse(self) -> str:
         return self._resolver.resolve()
 
-    def map_product(self, p: dict) -> ProductResult:
-        return ProductFormatter.map_product(p)
-
     def format_output(self, raw_products: list[dict], warehouse: str) -> ScraperResult:
         return ProductFormatter.format_output(
             raw_products,
@@ -55,9 +52,6 @@ class MercadonaScraper:
             self.term,
             self._strategy_used,
         )
-
-    def search_products_via_api(self, warehouse: str) -> list[dict]:
-        return ApiStrategy(self.term, self._client).search(warehouse)
 
     def run(self) -> ScraperResult:
         warehouse = self.get_warehouse()

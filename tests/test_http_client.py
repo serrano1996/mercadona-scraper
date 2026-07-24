@@ -1,7 +1,7 @@
 import requests
 import responses
 
-from http_client import HttpClient
+from mercadona_scraper.http_client import HttpClient
 
 URL = "https://tienda.mercadona.es/api/example/"
 
@@ -104,7 +104,7 @@ def test_put_raises_on_http_error_regression_previously_silently_returned(monkey
 @responses.activate
 def test_get_retries_on_connection_error_then_succeeds(monkeypatch):
     sleeps = []
-    monkeypatch.setattr("http_client.time.sleep", lambda s: sleeps.append(s))
+    monkeypatch.setattr("mercadona_scraper.http_client.time.sleep", lambda s: sleeps.append(s))
 
     responses.add(responses.GET, URL, body=requests.exceptions.ConnectionError())
     responses.add(responses.GET, URL, json={"ok": True}, status=200)
@@ -119,7 +119,7 @@ def test_get_retries_on_connection_error_then_succeeds(monkeypatch):
 @responses.activate
 def test_get_retries_on_timeout_then_succeeds(monkeypatch):
     sleeps = []
-    monkeypatch.setattr("http_client.time.sleep", lambda s: sleeps.append(s))
+    monkeypatch.setattr("mercadona_scraper.http_client.time.sleep", lambda s: sleeps.append(s))
 
     responses.add(responses.GET, URL, body=requests.exceptions.Timeout())
     responses.add(responses.GET, URL, json={"ok": True}, status=200)
@@ -134,7 +134,7 @@ def test_get_retries_on_timeout_then_succeeds(monkeypatch):
 @responses.activate
 def test_get_exhausts_retries_and_raises_connection_error(monkeypatch):
     sleeps = []
-    monkeypatch.setattr("http_client.time.sleep", lambda s: sleeps.append(s))
+    monkeypatch.setattr("mercadona_scraper.http_client.time.sleep", lambda s: sleeps.append(s))
 
     responses.add(responses.GET, URL, body=requests.exceptions.ConnectionError())
     responses.add(responses.GET, URL, body=requests.exceptions.ConnectionError())
@@ -153,7 +153,7 @@ def test_get_exhausts_retries_and_raises_connection_error(monkeypatch):
 
 @responses.activate
 def test_post_exhausts_retries_and_raises_connection_error(monkeypatch):
-    monkeypatch.setattr("http_client.time.sleep", lambda s: None)
+    monkeypatch.setattr("mercadona_scraper.http_client.time.sleep", lambda s: None)
 
     responses.add(responses.POST, URL, body=requests.exceptions.Timeout())
     responses.add(responses.POST, URL, body=requests.exceptions.Timeout())
@@ -170,7 +170,7 @@ def test_post_exhausts_retries_and_raises_connection_error(monkeypatch):
 @responses.activate
 def test_put_retries_on_connection_error_then_succeeds(monkeypatch):
     sleeps = []
-    monkeypatch.setattr("http_client.time.sleep", lambda s: sleeps.append(s))
+    monkeypatch.setattr("mercadona_scraper.http_client.time.sleep", lambda s: sleeps.append(s))
 
     responses.add(responses.PUT, URL, body=requests.exceptions.ConnectionError())
     responses.add(responses.PUT, URL, json={"ok": True}, status=200)
@@ -184,7 +184,7 @@ def test_put_retries_on_connection_error_then_succeeds(monkeypatch):
 
 @responses.activate
 def test_put_exhausts_retries_and_raises_connection_error(monkeypatch):
-    monkeypatch.setattr("http_client.time.sleep", lambda s: None)
+    monkeypatch.setattr("mercadona_scraper.http_client.time.sleep", lambda s: None)
 
     responses.add(responses.PUT, URL, body=requests.exceptions.ConnectionError())
     responses.add(responses.PUT, URL, body=requests.exceptions.ConnectionError())

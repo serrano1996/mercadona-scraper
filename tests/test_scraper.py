@@ -3,8 +3,8 @@ from unittest.mock import MagicMock
 import pytest
 import requests
 
-from exceptions import APISchemaError
-from scraper import MercadonaScraper
+from mercadona_scraper.exceptions import APISchemaError
+from mercadona_scraper.scraper import MercadonaScraper
 
 
 def _make_scraper(strategy="api", client=None) -> MercadonaScraper:
@@ -42,7 +42,7 @@ def test_run_strategy_playwright_calls_playwright_search_directly(monkeypatch):
     scraper = _make_scraper(strategy="playwright")
     mock_cls = MagicMock()
     mock_cls.return_value.search.return_value = [{"id": 1}]
-    monkeypatch.setattr("scraper.PlaywrightStrategy", mock_cls)
+    monkeypatch.setattr("mercadona_scraper.scraper.PlaywrightStrategy", mock_cls)
 
     result = scraper._run_strategy("mad1")
 
@@ -78,7 +78,7 @@ def test_run_strategy_auto_uses_api_results_when_present(monkeypatch):
     scraper = _make_scraper(strategy="auto")
     monkeypatch.setattr(scraper, "_run_api_with_fallback", MagicMock(return_value=[{"id": 3}]))
     mock_playwright_cls = MagicMock()
-    monkeypatch.setattr("scraper.PlaywrightStrategy", mock_playwright_cls)
+    monkeypatch.setattr("mercadona_scraper.scraper.PlaywrightStrategy", mock_playwright_cls)
 
     result = scraper._run_strategy("mad1")
 
@@ -92,7 +92,7 @@ def test_run_strategy_auto_falls_back_to_playwright_when_api_returns_empty(monke
     monkeypatch.setattr(scraper, "_run_api_with_fallback", MagicMock(return_value=[]))
     mock_playwright_cls = MagicMock()
     mock_playwright_cls.return_value.search.return_value = [{"id": 4}]
-    monkeypatch.setattr("scraper.PlaywrightStrategy", mock_playwright_cls)
+    monkeypatch.setattr("mercadona_scraper.scraper.PlaywrightStrategy", mock_playwright_cls)
 
     result = scraper._run_strategy("mad1")
 
@@ -116,9 +116,9 @@ def test_run_strategy_auto_catches_api_schema_error_and_falls_back_to_playwright
     mock_api_cls = MagicMock()
     mock_playwright_cls = MagicMock()
     mock_playwright_cls.return_value.search.return_value = [{"id": 5}]
-    monkeypatch.setattr("scraper.AlgoliaStrategy", mock_algolia_cls)
-    monkeypatch.setattr("scraper.ApiStrategy", mock_api_cls)
-    monkeypatch.setattr("scraper.PlaywrightStrategy", mock_playwright_cls)
+    monkeypatch.setattr("mercadona_scraper.scraper.AlgoliaStrategy", mock_algolia_cls)
+    monkeypatch.setattr("mercadona_scraper.scraper.ApiStrategy", mock_api_cls)
+    monkeypatch.setattr("mercadona_scraper.scraper.PlaywrightStrategy", mock_playwright_cls)
 
     result = scraper._run_strategy("mad1")
 
@@ -138,7 +138,7 @@ def test_run_api_with_fallback_propagates_api_schema_error(monkeypatch):
     scraper = _make_scraper(strategy="api")
     mock_algolia_cls = MagicMock()
     mock_algolia_cls.return_value.search.side_effect = APISchemaError("schema changed")
-    monkeypatch.setattr("scraper.AlgoliaStrategy", mock_algolia_cls)
+    monkeypatch.setattr("mercadona_scraper.scraper.AlgoliaStrategy", mock_algolia_cls)
 
     with pytest.raises(APISchemaError):
         scraper._run_api_with_fallback("mad1")
@@ -150,8 +150,8 @@ def test_run_api_with_fallback_falls_back_to_api_strategy_on_request_exception(m
     mock_algolia_cls.return_value.search.side_effect = requests.RequestException("network down")
     mock_api_cls = MagicMock()
     mock_api_cls.return_value.search.return_value = [{"id": 6}]
-    monkeypatch.setattr("scraper.AlgoliaStrategy", mock_algolia_cls)
-    monkeypatch.setattr("scraper.ApiStrategy", mock_api_cls)
+    monkeypatch.setattr("mercadona_scraper.scraper.AlgoliaStrategy", mock_algolia_cls)
+    monkeypatch.setattr("mercadona_scraper.scraper.ApiStrategy", mock_api_cls)
 
     result = scraper._run_api_with_fallback("mad1")
 
@@ -165,8 +165,8 @@ def test_run_api_with_fallback_falls_back_to_api_strategy_when_algolia_returns_e
     mock_algolia_cls.return_value.search.return_value = []
     mock_api_cls = MagicMock()
     mock_api_cls.return_value.search.return_value = [{"id": 7}]
-    monkeypatch.setattr("scraper.AlgoliaStrategy", mock_algolia_cls)
-    monkeypatch.setattr("scraper.ApiStrategy", mock_api_cls)
+    monkeypatch.setattr("mercadona_scraper.scraper.AlgoliaStrategy", mock_algolia_cls)
+    monkeypatch.setattr("mercadona_scraper.scraper.ApiStrategy", mock_api_cls)
 
     result = scraper._run_api_with_fallback("mad1")
 
@@ -191,7 +191,7 @@ def test_run_wires_resolver_strategy_and_formatter_correctly(monkeypatch):
             "categories": [{"name": "Lácteos"}],
         }
     ]
-    monkeypatch.setattr("scraper.AlgoliaStrategy", mock_algolia_cls)
+    monkeypatch.setattr("mercadona_scraper.scraper.AlgoliaStrategy", mock_algolia_cls)
 
     result = scraper.run()
 
@@ -207,7 +207,7 @@ def test_run_wires_resolver_strategy_and_formatter_correctly(monkeypatch):
 
 
 def test_run_propagates_warehouse_error_from_resolver(monkeypatch):
-    from exceptions import WarehouseError
+    from mercadona_scraper.exceptions import WarehouseError
 
     scraper = _make_scraper(strategy="api")
     monkeypatch.setattr(

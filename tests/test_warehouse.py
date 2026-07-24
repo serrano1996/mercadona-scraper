@@ -4,8 +4,8 @@ from unittest.mock import MagicMock
 import pytest
 import requests
 
-from exceptions import WarehouseError
-from warehouse import WarehouseResolver
+from mercadona_scraper.exceptions import WarehouseError
+from mercadona_scraper.warehouse import WarehouseResolver
 
 
 def _response(status_code=200, headers=None, content=b"{}", json_data=None, json_error=None):

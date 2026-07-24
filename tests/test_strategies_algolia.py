@@ -3,9 +3,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-from config import BASE_URL
-from exceptions import APISchemaError
-from strategies.algolia import AlgoliaStrategy
+from mercadona_scraper.config import BASE_URL
+from mercadona_scraper.exceptions import APISchemaError
+from mercadona_scraper.strategies.algolia import AlgoliaStrategy
 
 
 def _resp(json_data=None, text=""):

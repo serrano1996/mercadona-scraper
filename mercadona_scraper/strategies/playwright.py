@@ -3,8 +3,8 @@ import logging
 import re
 from urllib.parse import quote
 
-from config import BASE_URL, HEADERS
-from strategies.base import SearchStrategy
+from ..config import BASE_URL, HEADERS
+from .base import SearchStrategy
 
 logger = logging.getLogger(__name__)
 

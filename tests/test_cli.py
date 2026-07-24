@@ -4,9 +4,9 @@ from unittest.mock import MagicMock
 import pytest
 import requests
 
-import cli
-from exceptions import MercadonaScraperError
-from models import ProductResult, ScraperResult, SearchMeta
+from mercadona_scraper import cli
+from mercadona_scraper.exceptions import MercadonaScraperError
+from mercadona_scraper.models import ProductResult, ScraperResult, SearchMeta
 
 
 def _fake_result() -> ScraperResult:
@@ -50,7 +50,7 @@ def test_main_prints_json_to_stdout_when_no_output_given(monkeypatch, capsys):
     monkeypatch.setattr(
         "sys.argv", ["cli.py", "--postal-code", "28001", "--product", "leche"]
     )
-    monkeypatch.setattr("cli.MercadonaScraper", _mock_scraper_cls())
+    monkeypatch.setattr("mercadona_scraper.cli.MercadonaScraper", _mock_scraper_cls())
 
     cli.main()
 
@@ -73,7 +73,7 @@ def test_main_writes_output_file_and_prints_confirmation_to_stderr(monkeypatch, 
             str(output_file),
         ],
     )
-    monkeypatch.setattr("cli.MercadonaScraper", _mock_scraper_cls())
+    monkeypatch.setattr("mercadona_scraper.cli.MercadonaScraper", _mock_scraper_cls())
 
     cli.main()
 
@@ -95,7 +95,7 @@ def test_main_exits_on_invalid_postal_code(monkeypatch, capsys, bad_pc):
     monkeypatch.setattr(
         "sys.argv", ["cli.py", "--postal-code", bad_pc, "--product", "leche"]
     )
-    monkeypatch.setattr("cli.MercadonaScraper", _mock_scraper_cls())
+    monkeypatch.setattr("mercadona_scraper.cli.MercadonaScraper", _mock_scraper_cls())
 
     with pytest.raises(SystemExit) as exc_info:
         cli.main()
@@ -115,7 +115,7 @@ def test_main_exits_with_error_message_on_mercadona_scraper_error(monkeypatch):
         "sys.argv", ["cli.py", "--postal-code", "28001", "--product", "leche"]
     )
     monkeypatch.setattr(
-        "cli.MercadonaScraper",
+        "mercadona_scraper.cli.MercadonaScraper",
         _mock_scraper_cls(run_side_effect=MercadonaScraperError("almacén no encontrado")),
     )
 
@@ -130,7 +130,7 @@ def test_main_exits_with_error_message_on_request_exception(monkeypatch):
         "sys.argv", ["cli.py", "--postal-code", "28001", "--product", "leche"]
     )
     monkeypatch.setattr(
-        "cli.MercadonaScraper",
+        "mercadona_scraper.cli.MercadonaScraper",
         _mock_scraper_cls(run_side_effect=requests.RequestException("network down")),
     )
 
@@ -158,7 +158,7 @@ def test_main_exits_with_error_message_on_output_write_failure(monkeypatch):
             "/nonexistent-dir/out.json",
         ],
     )
-    monkeypatch.setattr("cli.MercadonaScraper", _mock_scraper_cls())
+    monkeypatch.setattr("mercadona_scraper.cli.MercadonaScraper", _mock_scraper_cls())
 
     def raise_oserror(*args, **kwargs):
         raise OSError("permission denied")
@@ -181,7 +181,7 @@ def test_headless_defaults_to_true_when_flag_omitted(monkeypatch):
         "sys.argv", ["cli.py", "--postal-code", "28001", "--product", "leche"]
     )
     mock_cls = _mock_scraper_cls()
-    monkeypatch.setattr("cli.MercadonaScraper", mock_cls)
+    monkeypatch.setattr("mercadona_scraper.cli.MercadonaScraper", mock_cls)
 
     cli.main()
 
@@ -194,7 +194,7 @@ def test_headless_flag_sets_true_explicitly(monkeypatch):
         ["cli.py", "--postal-code", "28001", "--product", "leche", "--headless"],
     )
     mock_cls = _mock_scraper_cls()
-    monkeypatch.setattr("cli.MercadonaScraper", mock_cls)
+    monkeypatch.setattr("mercadona_scraper.cli.MercadonaScraper", mock_cls)
 
     cli.main()
 
@@ -207,7 +207,7 @@ def test_no_headless_flag_sets_false(monkeypatch):
         ["cli.py", "--postal-code", "28001", "--product", "leche", "--no-headless"],
     )
     mock_cls = _mock_scraper_cls()
-    monkeypatch.setattr("cli.MercadonaScraper", mock_cls)
+    monkeypatch.setattr("mercadona_scraper.cli.MercadonaScraper", mock_cls)
 
     cli.main()
 
@@ -233,7 +233,7 @@ def test_strategy_argument_is_forwarded_to_scraper(monkeypatch):
         ],
     )
     mock_cls = _mock_scraper_cls()
-    monkeypatch.setattr("cli.MercadonaScraper", mock_cls)
+    monkeypatch.setattr("mercadona_scraper.cli.MercadonaScraper", mock_cls)
 
     cli.main()
 
@@ -253,7 +253,7 @@ def test_invalid_strategy_choice_exits(monkeypatch, capsys):
             "not-a-strategy",
         ],
     )
-    monkeypatch.setattr("cli.MercadonaScraper", _mock_scraper_cls())
+    monkeypatch.setattr("mercadona_scraper.cli.MercadonaScraper", _mock_scraper_cls())
 
     with pytest.raises(SystemExit) as exc_info:
         cli.main()

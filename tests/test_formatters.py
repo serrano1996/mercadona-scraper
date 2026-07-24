@@ -1,7 +1,7 @@
 import logging
 
-from formatters import ProductFormatter
-from models import ProductResult
+from mercadona_scraper.formatters import ProductFormatter
+from mercadona_scraper.models import ProductResult
 
 
 # --------------------------------------------------------------------- #

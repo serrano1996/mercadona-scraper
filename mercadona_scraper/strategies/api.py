@@ -3,10 +3,10 @@ import time
 
 import requests
 
-from config import API_URL
-from exceptions import APISchemaError
-from http_client import HttpClient
-from strategies.base import SearchStrategy
+from ..config import API_URL
+from ..exceptions import APISchemaError
+from ..http_client import HttpClient
+from .base import SearchStrategy
 
 logger = logging.getLogger(__name__)
 

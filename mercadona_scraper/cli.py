@@ -30,8 +30,8 @@ try:
 except ImportError:
     sys.exit("ERROR: Falta la librería 'requests'. Ejecuta: pip install requests")
 
-from exceptions import MercadonaScraperError
-from scraper import MercadonaScraper
+from .exceptions import MercadonaScraperError
+from .scraper import MercadonaScraper
 
 
 def main() -> None:

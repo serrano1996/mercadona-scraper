@@ -3,7 +3,7 @@ import time
 
 import requests
 
-from config import HEADERS
+from .config import HEADERS
 
 logger = logging.getLogger(__name__)
 

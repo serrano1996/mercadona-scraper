@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, timezone
 
-from models import ProductResult, ScraperResult, SearchMeta
+from .models import ProductResult, ScraperResult, SearchMeta
 
 logger = logging.getLogger(__name__)
 

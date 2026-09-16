@@ -73,13 +73,13 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
 
 ## Servicio
 
-- [ ] **T11 — `services/product_search.py`: camino cache-hit** ⚠️ *pendiente resolver: mapeo `postal_code → warehouse` (D4 asume `postal_code` obligatorio, pero `MercadonaClient.search` necesita `warehouse`, ej. "mad1" — no hay decisión tomada sobre cómo se resuelve; el proyecto `mercadona-scraper-old/` tenía un `WarehouseResolver` para esto, a evaluar si se reutiliza su enfoque).*
+- [x] **T11 — `services/product_search.py`: camino cache-hit** *(desbloqueada: `search_products` recibe `warehouse: str` ya resuelto como parámetro — el mapeo `postal_code → warehouse` no es responsabilidad de este módulo, queda para la capa de wiring, ej. T14/API, evaluar `WarehouseResolver` de `mercadona-scraper-old/` ahí cuando toque).*
   Si `CacheRepository.get(key)` devuelve algo, retorna directo sin llamar al scraper.
   Depende: T7, T5.
   RF: RF-4.
   Hecho cuando: test con cache pre-poblada → `MercadonaClient.search` mockeado, `assert_not_called()`.
 
-- [ ] **T12 — `services/product_search.py`: camino cache-miss** ⚠️ *mismo pendiente que T11 (mapeo `postal_code → warehouse`).*
+- [ ] **T12 — `services/product_search.py`: camino cache-miss** *(mismo desbloqueo que T11: recibe `warehouse` ya resuelto).*
   Cache-miss → resuelve `warehouse` desde `postal_code` → llama `MercadonaClient.search(term, warehouse)` → `product_mapper.map_raw_algolia_product_to_product_out` → `CacheRepository.set(ttl=3600)` → retorna.
   Depende: T6, T8, T10, T11.
   RF: RF-1, RF-4.

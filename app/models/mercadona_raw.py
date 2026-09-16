@@ -1,0 +1,72 @@
+"""Typed mirror of Mercadona's internal (undocumented) JSON shape.
+
+Field types come from a live capture of https://tienda.mercadona.es/api/categories/72/
+(see tests/fixtures/mercadona_product_sample.json), not from Mercadona's own docs —
+there are none. Never expose these models directly through the public API (see
+app/models/product.py + app/mappers/), so a Mercadona-side rename doesn't break our
+contract silently.
+"""
+
+from pydantic import BaseModel
+
+
+class RawCategoryRef(BaseModel):
+    id: int
+    name: str
+    level: int
+    order: int
+
+
+class RawProductBadges(BaseModel):
+    is_water: bool
+    requires_age_check: bool
+
+
+class RawPriceInstructions(BaseModel):
+    iva: str | None
+    is_new: bool
+    is_pack: bool
+    pack_size: float | None
+    unit_name: str | None
+    unit_size: float
+    bulk_price: str
+    unit_price: str
+    approx_size: bool
+    size_format: str
+    total_units: int | None
+    unit_selector: bool
+    bunch_selector: bool
+    # Always null in every sampled product; real type unverified.
+    drained_weight: float | None
+    selling_method: int
+    tax_percentage: str
+    price_decreased: bool
+    reference_price: str
+    min_bunch_amount: float
+    reference_format: str
+    # Sometimes comes with leading whitespace from Mercadona's own API
+    # (e.g. "        7.02") — keep raw here, clean up in the mapper (T6).
+    previous_unit_price: str | None
+    increment_bunch_amount: float
+
+
+class RawProduct(BaseModel):
+    id: str
+    slug: str
+    limit: int
+    badges: RawProductBadges
+    # Always null in every sampled product; real type unverified.
+    status: str | None
+    packaging: str | None
+    published: bool
+    share_url: str
+    thumbnail: str
+    categories: list[RawCategoryRef]
+    display_name: str
+    main_feature: str | None
+    # Always null in every sampled product; real type unverified.
+    unavailable_from: str | None
+    price_instructions: RawPriceInstructions
+    # Always empty in every sampled product; element type unverified.
+    unavailable_weekdays: list[int]
+    is_new_arrival: bool

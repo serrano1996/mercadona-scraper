@@ -17,7 +17,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
 
 ## Modelos
 
-- [ ] **T3 — DTO raw de Mercadona (`models/mercadona_raw.py`)**
+- [x] **T3 — DTO raw de Mercadona (`models/mercadona_raw.py`)**
   Modelos tipados que replican el JSON real de Mercadona (sin `Any`).
   Depende: T1.
   RF: RF-1.

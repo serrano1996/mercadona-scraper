@@ -85,7 +85,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-1, RF-4.
   Hecho cuando: test con cache vacía → resultado correcto y `CacheRepository.set` llamado una vez con `ttl=3600`.
 
-- [ ] **T13 — Mapeo de error 5xx agotado → excepción de dominio**
+- [x] **T13 — Mapeo de error 5xx agotado → excepción de dominio**
   Tras agotar reintentos (T10), el servicio lanza una excepción propia (`UpstreamUnavailableError`) en vez de dejar pasar la excepción de httpx.
   Depende: T12.
   RF: RF-3.

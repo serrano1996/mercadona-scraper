@@ -1,6 +1,9 @@
 from datetime import UTC, datetime
 
+import httpx
+
 from app.core.config import Settings
+from app.exceptions import UpstreamUnavailableError
 from app.mappers.product_mapper import map_raw_algolia_product_to_product_out
 from app.models.product import ProductSearchResponse, SearchMeta
 from app.models.query import ProductQuery
@@ -22,7 +25,16 @@ async def search_products(
     if cached is not None:
         return cached
 
-    raw_products = await client.search(term=query.term, warehouse=warehouse)
+    try:
+        raw_products = await client.search(term=query.term, warehouse=warehouse)
+    except httpx.TransportError as exc:
+        raise UpstreamUnavailableError("Mercadona/Algolia is unreachable") from exc
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code >= 500:
+            raise UpstreamUnavailableError(
+                f"Mercadona/Algolia returned {exc.response.status_code}"
+            ) from exc
+        raise
     products = [map_raw_algolia_product_to_product_out(raw) for raw in raw_products]
     response = ProductSearchResponse(
         search=SearchMeta(

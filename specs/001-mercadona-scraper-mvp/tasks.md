@@ -105,7 +105,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-3.
   Hecho cuando: test — servicio lanza `UpstreamUnavailableError` mockeado → response HTTP 502.
 
-- [ ] **T16 — Término sin resultados → lista vacía**
+- [x] **T16 — Término sin resultados → lista vacía**
   Verificar que `product_search`/mapper no fallan con 0 resultados y la ruta responde 200 con `[]`.
   Depende: T14.
   RF: RF-2.

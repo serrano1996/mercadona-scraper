@@ -1,4 +1,6 @@
-"""T14 — GET /api/v1/products: happy path returns 200 with parsed results (RF-1)."""
+"""T14/T16 — GET /api/v1/products: happy path returns 200 with parsed
+results (RF-1); a term with no matches returns 200 with an empty list,
+not an error (RF-2)."""
 
 import json
 from pathlib import Path
@@ -60,3 +62,25 @@ async def test_get_products_returns_200_with_results(app: FastAPI) -> None:
     assert body["search"]["term"] == "leche"
     assert len(body["products"]) == 1
     assert body["products"][0]["id"] == "10381"
+
+
+async def test_get_products_returns_200_with_empty_list_when_no_matches(app: FastAPI) -> None:
+    cache = AsyncMock(spec=CacheRepository)
+    cache.get.return_value = None
+    client = AsyncMock(spec=MercadonaClient)
+    client.search.return_value = []
+
+    app.dependency_overrides[get_cache_repository] = lambda: cache
+    app.dependency_overrides[get_mercadona_client] = lambda: client
+    app.dependency_overrides[get_settings] = lambda: _settings()
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as http_client:
+        response = await http_client.get(
+            "/api/v1/products", params={"postal_code": "28001", "term": "xyz-no-existe"}
+        )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["products"] == []
+    assert body["search"]["total_results"] == 0

@@ -37,7 +37,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
 
 ## Mapeo
 
-- [ ] **T6 — `mappers/product_mapper.py`**
+- [x] **T6 — `mappers/product_mapper.py`**
   Función pura: DTO raw → `ProductOut` / `SearchMeta`. Si falta precio/unidad → `price_format=None`.
   Depende: T3, T5.
   RF: RF-1, caso límite "sin precio por unidad".

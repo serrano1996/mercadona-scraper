@@ -29,7 +29,10 @@ class RawPriceInstructions(BaseModel):
     pack_size: float | None
     unit_name: str | None
     unit_size: float
-    bulk_price: str
+    # Always present in every sampled product, but nullable per spec.md's
+    # "missing price-per-unit" edge case — not every Mercadona product is
+    # guaranteed to carry it (see app/mappers/product_mapper.py).
+    bulk_price: str | None
     unit_price: str
     approx_size: bool
     size_format: str
@@ -43,7 +46,8 @@ class RawPriceInstructions(BaseModel):
     price_decreased: bool
     reference_price: str
     min_bunch_amount: float
-    reference_format: str
+    # Same nullability note as bulk_price above.
+    reference_format: str | None
     # Sometimes comes with leading whitespace from Mercadona's own API
     # (e.g. "        7.02") — keep raw here, clean up in the mapper (T6).
     previous_unit_price: str | None

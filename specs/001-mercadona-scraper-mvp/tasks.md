@@ -138,7 +138,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-2.
   Hecho cuando: test pasa, response 200 + `products: []`.
 
-- [ ] **T21 — Integración RF-3: retry y 502**
+- [x] **T21 — Integración RF-3: retry y 502**
   Dos variantes: 3×5xx → 502; 5xx,5xx,200 → 200.
   Depende: T18.
   RF: RF-3.

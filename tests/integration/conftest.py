@@ -21,9 +21,21 @@ def required_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
 
 
+class _FreshFakeRedisFactory:
+    """`fakeredis.FakeAsyncRedis.from_url(url)` shares in-memory state across
+    instances built from the *same* url (it mirrors real Redis: same
+    connection string = same server) — that leaked cache entries between
+    tests here. Ignoring the url and building a bare FakeAsyncRedis() per
+    call keeps each test's cache isolated."""
+
+    @staticmethod
+    def from_url(*_args: object, **_kwargs: object) -> fakeredis.FakeAsyncRedis:
+        return fakeredis.FakeAsyncRedis()
+
+
 @pytest.fixture
 async def client(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[AsyncClient]:
-    monkeypatch.setattr("app.main.Redis", fakeredis.FakeAsyncRedis)
+    monkeypatch.setattr("app.main.Redis", _FreshFakeRedisFactory)
 
     transport = ASGITransport(app=fastapi_app)
     async with (

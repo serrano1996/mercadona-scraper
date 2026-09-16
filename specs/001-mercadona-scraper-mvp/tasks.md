@@ -113,7 +113,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
 
 ## Ensamblaje
 
-- [ ] **T17 — `main.py`: lifespan y wiring**
+- [x] **T17 — `main.py`: lifespan y wiring**
   Crea `FastAPI()`, monta router `api/v1/products`, `lifespan` abre/cierra `httpx.AsyncClient` y conexión Redis.
   Depende: T14.
   RF: base (soporte de todos los RF).

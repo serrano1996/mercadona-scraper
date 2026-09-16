@@ -99,7 +99,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-1, RF-2.
   Hecho cuando: request con término con resultados → 200 + body con `products` no vacío.
 
-- [ ] **T15 — Mapeo `UpstreamUnavailableError` → 502**
+- [x] **T15 — Mapeo `UpstreamUnavailableError` → 502**
   Handler/except en la ruta (o exception handler global) convierte la excepción de T13 en `HTTPException(502)`.
   Depende: T13, T14.
   RF: RF-3.

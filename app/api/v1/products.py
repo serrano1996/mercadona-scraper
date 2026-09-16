@@ -1,8 +1,9 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.core.config import Settings
+from app.exceptions import UpstreamUnavailableError
 from app.models.product import ProductSearchResponse
 from app.models.query import ProductQuery
 from app.scrapers.mercadona_client import MercadonaClient
@@ -34,7 +35,10 @@ CacheDep = Annotated[CacheRepository, Depends(get_cache_repository)]
 MercadonaClientDep = Annotated[MercadonaClient, Depends(get_mercadona_client)]
 
 
-@router.get("/products")
+@router.get(
+    "/products",
+    responses={502: {"description": "Mercadona/Algolia is unavailable after retrying"}},
+)
 async def get_products(
     postal_code: str,
     term: str,
@@ -43,6 +47,9 @@ async def get_products(
     client: MercadonaClientDep,
 ) -> ProductSearchResponse:
     query = ProductQuery(postal_code=postal_code, term=term)
-    return await search_products(
-        query, warehouse=_DEFAULT_WAREHOUSE, cache=cache, client=client, settings=settings
-    )
+    try:
+        return await search_products(
+            query, warehouse=_DEFAULT_WAREHOUSE, cache=cache, client=client, settings=settings
+        )
+    except UpstreamUnavailableError as exc:
+        raise HTTPException(status_code=502, detail="Mercadona is currently unavailable") from exc

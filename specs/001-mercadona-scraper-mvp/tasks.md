@@ -144,7 +144,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-3.
   Hecho cuando: ambos tests pasan en verde.
 
-- [ ] **T22 — Integración RF-4: cache hit evita 2ª llamada**
+- [x] **T22 — Integración RF-4: cache hit evita 2ª llamada**
   Misma query dos veces dentro del TTL → 2ª vez no llama a Mercadona (mock `assert_not_called`).
   Depende: T18.
   RF: RF-4.

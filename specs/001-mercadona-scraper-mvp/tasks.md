@@ -170,7 +170,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: NFR de calidad (constitución #7, #8).
   Hecho cuando: ambos comandos terminan sin error y el reporte de cobertura marca ≥80%.
 
-- [ ] **T26 — Verificación manual Swagger**
+- [x] **T26 — Verificación manual Swagger** *(encontró y arregló bug real: `iva` era `int`, no `str|None`)*
   Levantar `uvicorn app.main:app`, consultar 3 productos reales desde `/docs`.
   Depende: T25.
   RF: criterio de finalización de spec.md.

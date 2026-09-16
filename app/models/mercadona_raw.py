@@ -23,7 +23,10 @@ class RawProductBadges(BaseModel):
 
 
 class RawPriceInstructions(BaseModel):
-    iva: str | None
+    # Typed str | None from the first sample (always null there); a real
+    # request during T26's manual verification hit iva=10 (int). Sampling a
+    # whole real category confirmed it's always null or int, never a string.
+    iva: int | None
     is_new: bool
     is_pack: bool
     pack_size: float | None

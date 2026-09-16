@@ -39,3 +39,17 @@ def test_raw_product_allows_null_price_unit_fields() -> None:
     assert product.price_instructions.unit_name is None
     assert product.price_instructions.pack_size is None
     assert product.price_instructions.total_units is None
+
+
+def test_raw_product_allows_integer_iva() -> None:
+    """Regression: T3's fixture only ever saw iva=null, so the field was
+    typed str | None. A real live request during T26's manual verification
+    hit a product with iva=10 (int) and failed validation — sampled a whole
+    real category afterwards and confirmed iva is always null or int, never
+    a string (see Decision in plan.md's T26 verification notes)."""
+    payload = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
+    payload["price_instructions"]["iva"] = 10
+
+    product = RawProduct.model_validate(payload)
+
+    assert product.price_instructions.iva == 10

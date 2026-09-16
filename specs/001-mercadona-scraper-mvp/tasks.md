@@ -45,7 +45,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
 
 ## Cache
 
-- [ ] **T7 — `services/cache.py`: `CacheRepository` básico**
+- [x] **T7 — `services/cache.py`: `CacheRepository` básico**
   `get(key)` / `set(key, value, ttl)` sobre Redis (cliente async), serializa `ProductSearchResponse` a JSON.
   Depende: T5, T2.
   RF: RF-4.

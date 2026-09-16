@@ -1,0 +1,113 @@
+"""T9 — MercadonaClient.search hits Mercadona's real search backend (Algolia),
+extracting credentials from a legacy bundle Mercadona still serves (see
+Decision D7 in plan.md). All shapes here are real, captured live on
+2026-09-16, not fabricated."""
+
+import json
+from pathlib import Path
+
+import httpx
+import pytest
+import respx
+
+from app.core.config import Settings
+from app.scrapers.mercadona_client import AlgoliaCredentialsUnavailable, MercadonaClient
+
+FIXTURE_PATH = Path(__file__).parent.parent / "fixtures" / "mercadona_algolia_hit_sample.json"
+
+MANIFEST_PAYLOAD = {"main.js": "/v815/static/js/main.35c4c08c.chunk.js"}
+BUNDLE_URL = "https://tienda.mercadona.es/v815/static/js/main.35c4c08c.chunk.js"
+
+# Synthetic values, NOT the real production credentials (never commit those
+# to a repo) — same character shape/length as what the legacy bundle really
+# embeds, so the extraction regex is exercised the same way. Real technique
+# verified live against production on 2026-09-16 (see Decision D7 in
+# plan.md); this fixture only proves the parsing logic, not liveness.
+FAKE_APP_ID = "TESTAPPID12"
+FAKE_API_KEY = "0123456789abcdef0123456789abcdef"
+FAKE_INDEX_PREFIX = "products_prod"
+
+BUNDLE_JS_WITH_CREDENTIALS = (
+    'REACT_APP_AVAILABLE_LANGUAGES:\'["es","ca","en"]\','
+    f'REACT_APP_ALGOLIA_ID:"{FAKE_APP_ID}",'
+    f'REACT_APP_ALGOLIA_KEY:"{FAKE_API_KEY}",'
+    f'REACT_APP_ALGOLIA_NAME:"{FAKE_INDEX_PREFIX}",'
+    'REACT_APP_ANALYTICS_DOMAIN:"tienda.mercadona.es"'
+)
+
+BUNDLE_JS_WITHOUT_CREDENTIALS = "REACT_APP_ANALYTICS_DOMAIN:\"tienda.mercadona.es\""
+
+
+@pytest.fixture
+def settings() -> Settings:
+    return Settings(
+        MERCADONA_BASE_URL="https://tienda.mercadona.es",
+        REDIS_URL="redis://localhost:6379/0",
+    )
+
+
+def _algolia_response_with_one_hit() -> dict:
+    hit = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
+    return {"results": [{"hits": [hit]}]}
+
+
+async def test_search_returns_parsed_products(settings: Settings) -> None:
+    with respx.mock(assert_all_called=True) as mock:
+        mock.get("https://tienda.mercadona.es/asset-manifest.json").mock(
+            return_value=httpx.Response(200, json=MANIFEST_PAYLOAD)
+        )
+        mock.get(BUNDLE_URL).mock(
+            return_value=httpx.Response(200, text=BUNDLE_JS_WITH_CREDENTIALS)
+        )
+        mock.post(f"https://{FAKE_APP_ID}-dsn.algolia.net/1/indexes/*/queries").mock(
+            return_value=httpx.Response(200, json=_algolia_response_with_one_hit())
+        )
+
+        async with httpx.AsyncClient() as http_client:
+            client = MercadonaClient(http_client, settings)
+            products = await client.search(term="leche", warehouse="mad1")
+
+    assert len(products) == 1
+    assert products[0].id == "10381"
+    assert products[0].display_name == "Leche semidesnatada Hacendado"
+    assert products[0].brand == "Hacendado"
+    assert products[0].categories[0].name == "Huevos, leche y mantequilla"
+
+
+async def test_search_sends_correct_algolia_index_and_headers(settings: Settings) -> None:
+    with respx.mock(assert_all_called=True) as mock:
+        mock.get("https://tienda.mercadona.es/asset-manifest.json").mock(
+            return_value=httpx.Response(200, json=MANIFEST_PAYLOAD)
+        )
+        mock.get(BUNDLE_URL).mock(
+            return_value=httpx.Response(200, text=BUNDLE_JS_WITH_CREDENTIALS)
+        )
+        algolia_route = mock.post(f"https://{FAKE_APP_ID}-dsn.algolia.net/1/indexes/*/queries").mock(
+            return_value=httpx.Response(200, json=_algolia_response_with_one_hit())
+        )
+
+        async with httpx.AsyncClient() as http_client:
+            client = MercadonaClient(http_client, settings)
+            await client.search(term="leche", warehouse="mad1")
+
+    sent_request = algolia_route.calls.last.request
+    assert sent_request.headers["X-Algolia-Application-Id"] == FAKE_APP_ID
+    assert sent_request.headers["X-Algolia-API-Key"] == FAKE_API_KEY
+    body = json.loads(sent_request.content)
+    assert body["requests"][0]["indexName"] == f"{FAKE_INDEX_PREFIX}_mad1_es"
+    assert "query=leche" in body["requests"][0]["params"]
+
+
+async def test_search_raises_when_credentials_not_found(settings: Settings) -> None:
+    with respx.mock(assert_all_called=True) as mock:
+        mock.get("https://tienda.mercadona.es/asset-manifest.json").mock(
+            return_value=httpx.Response(200, json=MANIFEST_PAYLOAD)
+        )
+        mock.get(BUNDLE_URL).mock(
+            return_value=httpx.Response(200, text=BUNDLE_JS_WITHOUT_CREDENTIALS)
+        )
+
+        async with httpx.AsyncClient() as http_client:
+            client = MercadonaClient(http_client, settings)
+            with pytest.raises(AlgoliaCredentialsUnavailable):
+                await client.search(term="leche", warehouse="mad1")

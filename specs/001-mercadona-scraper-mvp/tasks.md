@@ -59,11 +59,11 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
 
 ## Scraper
 
-- [ ] **T9 — `scrapers/mercadona_client.py`: llamada base**
-  `MercadonaClient.search(term, postal_code)` usa `httpx.AsyncClient`, parsea respuesta a DTO raw (T3), sin retry aún.
-  Depende: T2, T3.
+- [x] **T9 — `scrapers/mercadona_client.py`: búsqueda real vía Algolia** *(re-diseñada dos veces, ver Decisión D7 de plan.md)*
+  No existe endpoint de búsqueda server-side propio en Mercadona. La búsqueda real es Algolia; sus credenciales no están en el bundle Vite actual, pero sí en un bundle legacy (`asset-manifest.json` → `main.js`, convención CRA) que Mercadona sigue sirviendo aunque ya no lo usa — **probado en vivo**, credenciales de julio siguen activas hoy. `MercadonaClient.search(term, warehouse)` encadena 3 llamadas reales: `GET {base}/asset-manifest.json` → `GET {base}{main.js}` (regex `REACT_APP_ALGOLIA_ID`/`KEY`/`NAME`) → `POST https://{appId}-dsn.algolia.net/1/indexes/*/queries` sobre índice `{index_prefix}_{warehouse}_es`. Sin credenciales extraíbles → `AlgoliaCredentialsUnavailable`. Nuevo DTO `RawAlgoliaProduct`/`RawAlgoliaCategoryNode` (shape distinto de `RawProduct` de T3 — categorías anidadas, sin `main_feature`/`is_new_arrival`, con `brand`/`score`/`popularity_score`). Sin retry aún.
+  Depende: T2, T3 (reutiliza `RawProductBadges`/`RawPriceInstructions`).
   RF: RF-1.
-  Hecho cuando: test con `respx` mockeando 200 → devuelve DTO raw parseado correctamente.
+  Hecho cuando: test con `respx` mockeando las 3 llamadas (formas reales capturadas) → devuelve `list[RawAlgoliaProduct]` parseada correctamente; test con bundle sin credenciales → `AlgoliaCredentialsUnavailable`.
 
 - [ ] **T10 — Retry/backoff exponencial**
   Reintenta hasta `RETRY_MAX_ATTEMPTS` sólo en 5xx/timeout/error de conexión (Decisión D1/D2). 4xx no reintenta.
@@ -73,14 +73,14 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
 
 ## Servicio
 
-- [ ] **T11 — `services/product_search.py`: camino cache-hit**
+- [ ] **T11 — `services/product_search.py`: camino cache-hit** ⚠️ *pendiente resolver: mapeo `postal_code → warehouse` (D4 asume `postal_code` obligatorio, pero `MercadonaClient.search` necesita `warehouse`, ej. "mad1" — no hay decisión tomada sobre cómo se resuelve; el proyecto `mercadona-scraper-old/` tenía un `WarehouseResolver` para esto, a evaluar si se reutiliza su enfoque).*
   Si `CacheRepository.get(key)` devuelve algo, retorna directo sin llamar al scraper.
   Depende: T7, T5.
   RF: RF-4.
   Hecho cuando: test con cache pre-poblada → `MercadonaClient.search` mockeado, `assert_not_called()`.
 
-- [ ] **T12 — `services/product_search.py`: camino cache-miss**
-  Cache-miss → llama `MercadonaClient.search` → `product_mapper` → `CacheRepository.set(ttl=3600)` → retorna.
+- [ ] **T12 — `services/product_search.py`: camino cache-miss** ⚠️ *mismo pendiente que T11 (mapeo `postal_code → warehouse`).*
+  Cache-miss → resuelve `warehouse` desde `postal_code` → llama `MercadonaClient.search(term, warehouse)` → `product_mapper.map_raw_algolia_product_to_product_out` → `CacheRepository.set(ttl=3600)` → retorna.
   Depende: T6, T8, T10, T11.
   RF: RF-1, RF-4.
   Hecho cuando: test con cache vacía → resultado correcto y `CacheRepository.set` llamado una vez con `ttl=3600`.

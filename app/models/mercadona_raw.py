@@ -74,3 +74,50 @@ class RawProduct(BaseModel):
     # Always empty in every sampled product; element type unverified.
     unavailable_weekdays: list[int]
     is_new_arrival: bool
+
+
+class RawAlgoliaCategoryNode(BaseModel):
+    """Category breadcrumb node as returned by Algolia search hits.
+
+    Unlike RawCategoryRef (flat list from /api/categories/), this is a
+    self-referential tree — each level nests the next one under its own
+    `categories` key, absent entirely at the deepest level (see Decision D7
+    in plan.md).
+    """
+
+    id: int
+    name: str
+    level: int
+    order: int
+    categories: list["RawAlgoliaCategoryNode"] = []
+
+
+class RawAlgoliaProduct(BaseModel):
+    """Product shape as returned by Mercadona's real search backend (Algolia).
+
+    A distinct shape from RawProduct (category-browse): no main_feature/
+    is_new_arrival, nested categories, plus brand/score/popularity_score/
+    objectID that Algolia adds for search ranking. See Decision D7 in
+    plan.md for how these get fetched.
+    """
+
+    id: str
+    slug: str
+    limit: int
+    badges: RawProductBadges
+    status: str | None
+    packaging: str | None
+    published: bool
+    share_url: str
+    thumbnail: str
+    categories: list[RawAlgoliaCategoryNode]
+    display_name: str
+    unavailable_from: str | None
+    price_instructions: RawPriceInstructions
+    unavailable_weekdays: list[int]
+    # Present for every sampled hit, but a generic/unbranded product is a
+    # plausible real-world case we haven't observed — kept nullable.
+    brand: str | None
+    score: float
+    popularity_score: int
+    objectID: str

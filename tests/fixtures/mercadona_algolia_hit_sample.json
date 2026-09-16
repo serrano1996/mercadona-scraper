@@ -1,0 +1,69 @@
+{
+  "score": 34790.0,
+  "popularity_score": 17148,
+  "id": "10381",
+  "slug": "leche-semidesnatada-hacendado-pack-6",
+  "brand": "Hacendado",
+  "limit": 999,
+  "badges": {
+    "is_water": false,
+    "requires_age_check": false
+  },
+  "packaging": null,
+  "published": true,
+  "share_url": "https://tienda.mercadona.es/product/10381/leche-semidesnatada-hacendado-pack-6",
+  "thumbnail": "https://prod-mercadona.imgix.net/images/b91d8b8bafd5eabab8961aabbe16c28b.jpg?fit=crop&h=300&w=300",
+  "categories": [
+    {
+      "id": 6,
+      "name": "Huevos, leche y mantequilla",
+      "level": 0,
+      "order": 373,
+      "categories": [
+        {
+          "id": 72,
+          "name": "Leche y bebidas vegetales",
+          "level": 1,
+          "order": 373,
+          "categories": [
+            {
+              "id": 343,
+              "name": "Leche semidesnatada",
+              "level": 2,
+              "order": 373
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "display_name": "Leche semidesnatada Hacendado",
+  "unavailable_from": null,
+  "price_instructions": {
+    "iva": null,
+    "is_new": false,
+    "is_pack": true,
+    "pack_size": 1.0,
+    "unit_name": "briks",
+    "unit_size": 6.0,
+    "bulk_price": "0.84",
+    "unit_price": "5.04",
+    "approx_size": false,
+    "size_format": "l",
+    "total_units": 6,
+    "unit_selector": true,
+    "bunch_selector": false,
+    "drained_weight": null,
+    "selling_method": 0,
+    "tax_percentage": "4.000",
+    "price_decreased": false,
+    "reference_price": "0.840",
+    "min_bunch_amount": 1.0,
+    "reference_format": "L",
+    "previous_unit_price": null,
+    "increment_bunch_amount": 1.0
+  },
+  "unavailable_weekdays": [],
+  "status": null,
+  "objectID": "10381"
+}

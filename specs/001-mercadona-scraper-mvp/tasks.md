@@ -9,7 +9,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: base (ninguno específico).
   Hecho cuando: `python -c "import app"` no falla; `ruff check .` limpio.
 
-- [ ] **T2 — Config (`core/config.py`)**
+- [x] **T2 — Config (`core/config.py`)**
   `Settings` (pydantic-settings): `MERCADONA_BASE_URL`, `REDIS_URL`, `CACHE_TTL_SECONDS=3600`, `RETRY_MAX_ATTEMPTS=3`, `RETRY_BASE_DELAY`.
   Depende: T1.
   RF: RF-3, RF-4.

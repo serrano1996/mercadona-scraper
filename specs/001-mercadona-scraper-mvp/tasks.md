@@ -133,7 +133,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-1.
   Hecho cuando: test pasa en verde con `pytest`.
 
-- [ ] **T20 — Integración RF-2: búsqueda vacía**
+- [x] **T20 — Integración RF-2: búsqueda vacía**
   Depende: T18.
   RF: RF-2.
   Hecho cuando: test pasa, response 200 + `products: []`.

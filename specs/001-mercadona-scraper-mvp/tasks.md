@@ -23,7 +23,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-1.
   Hecho cuando: un JSON de ejemplo (fixture) de un producto real de Mercadona valida sin error contra el DTO.
 
-- [ ] **T4 — `ProductQuery` (`models/query.py`)**
+- [x] **T4 — `ProductQuery` (`models/query.py`)**
   Campos `postal_code: str`, `term: str`, ambos requeridos (Decisión D4 de plan.md).
   Depende: T1.
   RF: RF-1.

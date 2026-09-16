@@ -51,7 +51,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-4.
   Hecho cuando: test con `fakeredis` — `set` seguido de `get` devuelve el mismo objeto deserializado.
 
-- [ ] **T8 — `CacheRepository`: degradación si Redis cae**
+- [x] **T8 — `CacheRepository`: degradación si Redis cae**
   `get`/`set` envueltos en try/except; log warning; nunca propagan excepción.
   Depende: T7.
   RF: caso límite "Caché inaccesible".

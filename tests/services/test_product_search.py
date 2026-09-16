@@ -1,14 +1,35 @@
-"""T11 — product_search.search_products returns the cached response
-directly on a cache hit, without touching MercadonaClient."""
+"""T11/T12 — product_search.search_products: cache-hit returns the cached
+response directly without touching MercadonaClient; cache-miss fetches,
+maps, caches, and returns the fresh result (RF-1, RF-4)."""
 
+import json
 from datetime import UTC, datetime
+from pathlib import Path
 from unittest.mock import AsyncMock
 
+from app.core.config import Settings
+from app.models.mercadona_raw import RawAlgoliaProduct
 from app.models.product import ProductOut, ProductSearchResponse, SearchMeta
 from app.models.query import ProductQuery
 from app.scrapers.mercadona_client import MercadonaClient
 from app.services.cache import CacheRepository
 from app.services.product_search import search_products
+
+ALGOLIA_FIXTURE_PATH = (
+    Path(__file__).parent.parent / "fixtures" / "mercadona_algolia_hit_sample.json"
+)
+
+
+def _settings() -> Settings:
+    return Settings(
+        MERCADONA_BASE_URL="https://tienda.mercadona.es",
+        REDIS_URL="redis://localhost:6379/0",
+    )
+
+
+def _raw_algolia_product() -> RawAlgoliaProduct:
+    payload = json.loads(ALGOLIA_FIXTURE_PATH.read_text(encoding="utf-8"))
+    return RawAlgoliaProduct.model_validate(payload)
 
 
 def _sample_response() -> ProductSearchResponse:
@@ -41,8 +62,33 @@ async def test_returns_cached_response_without_calling_client() -> None:
     client = AsyncMock(spec=MercadonaClient)
     query = ProductQuery(postal_code="28001", term="leche")
 
-    result = await search_products(query, warehouse="mad1", cache=cache, client=client)
+    result = await search_products(
+        query, warehouse="mad1", cache=cache, client=client, settings=_settings()
+    )
 
     assert result == cached_response
     cache.get.assert_awaited_once_with("search:28001:leche")
     client.search.assert_not_called()
+
+
+async def test_cache_miss_fetches_maps_and_caches_result() -> None:
+    cache = AsyncMock(spec=CacheRepository)
+    cache.get.return_value = None
+    client = AsyncMock(spec=MercadonaClient)
+    client.search.return_value = [_raw_algolia_product()]
+    query = ProductQuery(postal_code="28001", term="leche")
+
+    result = await search_products(
+        query, warehouse="mad1", cache=cache, client=client, settings=_settings()
+    )
+
+    client.search.assert_awaited_once_with(term="leche", warehouse="mad1")
+    assert result.search.postal_code == "28001"
+    assert result.search.term == "leche"
+    assert result.search.warehouse == "mad1"
+    assert result.search.total_results == 1
+    assert len(result.products) == 1
+    assert result.products[0].id == "10381"
+    assert result.products[0].name == "Leche semidesnatada Hacendado"
+
+    cache.set.assert_awaited_once_with("search:28001:leche", result, ttl=3600)

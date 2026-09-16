@@ -1,7 +1,13 @@
-from app.models.product import ProductSearchResponse
+from datetime import UTC, datetime
+
+from app.core.config import Settings
+from app.mappers.product_mapper import map_raw_algolia_product_to_product_out
+from app.models.product import ProductSearchResponse, SearchMeta
 from app.models.query import ProductQuery
 from app.scrapers.mercadona_client import MercadonaClient
 from app.services.cache import CacheRepository
+
+_STRATEGY_USED = "algolia"
 
 
 async def search_products(
@@ -9,11 +15,26 @@ async def search_products(
     warehouse: str,
     cache: CacheRepository,
     client: MercadonaClient,
+    settings: Settings,
 ) -> ProductSearchResponse:
     cache_key = f"search:{query.postal_code}:{query.term}"
     cached = await cache.get(cache_key)
     if cached is not None:
         return cached
 
-    # Cache-miss path (fetch + map + cache-write) implemented in T12.
-    raise NotImplementedError("cache-miss path implemented in T12")
+    raw_products = await client.search(term=query.term, warehouse=warehouse)
+    products = [map_raw_algolia_product_to_product_out(raw) for raw in raw_products]
+    response = ProductSearchResponse(
+        search=SearchMeta(
+            postal_code=query.postal_code,
+            term=query.term,
+            warehouse=warehouse,
+            strategy_used=_STRATEGY_USED,
+            scraped_at=datetime.now(UTC),
+            total_results=len(products),
+        ),
+        products=products,
+    )
+
+    await cache.set(cache_key, response, ttl=settings.CACHE_TTL_SECONDS)
+    return response

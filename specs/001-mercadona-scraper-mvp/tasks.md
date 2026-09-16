@@ -79,7 +79,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-4.
   Hecho cuando: test con cache pre-poblada → `MercadonaClient.search` mockeado, `assert_not_called()`.
 
-- [ ] **T12 — `services/product_search.py`: camino cache-miss** *(mismo desbloqueo que T11: recibe `warehouse` ya resuelto).*
+- [x] **T12 — `services/product_search.py`: camino cache-miss** *(mismo desbloqueo que T11: recibe `warehouse` ya resuelto).*
   Cache-miss → resuelve `warehouse` desde `postal_code` → llama `MercadonaClient.search(term, warehouse)` → `product_mapper.map_raw_algolia_product_to_product_out` → `CacheRepository.set(ttl=3600)` → retorna.
   Depende: T6, T8, T10, T11.
   RF: RF-1, RF-4.

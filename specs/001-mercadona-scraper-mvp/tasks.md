@@ -156,7 +156,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: caso límite "Caché inaccesible".
   Hecho cuando: test pasa, `caplog` contiene el warning.
 
-- [ ] **T24 — Integración caso límite: producto sin precio/unidad**
+- [x] **T24 — Integración caso límite: producto sin precio/unidad**
   Fixture de Mercadona sin ese campo → response 200, `price_format: null`.
   Depende: T18.
   RF: caso límite "sin precio por unidad".

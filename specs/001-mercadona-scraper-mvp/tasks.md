@@ -127,7 +127,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: soporte de test (ninguno específico).
   Hecho cuando: un test trivial (`GET /docs` → 200) pasa usando las fixtures.
 
-- [ ] **T19 — Integración RF-1: happy path**
+- [x] **T19 — Integración RF-1: happy path**
   `GET /api/v1/products?postal_code=28001&term=leche` con Mercadona mockeada → 200, valida forma exacta contra `ProductSearchResponse`.
   Depende: T18.
   RF: RF-1.

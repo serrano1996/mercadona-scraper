@@ -16,9 +16,7 @@ from app.models.mercadona_raw import RawAlgoliaProduct
 from app.scrapers.mercadona_client import MercadonaClient
 from app.services.cache import CacheRepository
 
-FIXTURE_PATH = (
-    Path(__file__).parent.parent / "fixtures" / "mercadona_algolia_hit_sample.json"
-)
+FIXTURE_PATH = Path(__file__).parent.parent / "fixtures" / "mercadona_algolia_hit_sample.json"
 
 
 def _settings() -> Settings:

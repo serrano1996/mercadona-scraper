@@ -105,9 +105,7 @@ class MercadonaClient:
         last_error: Exception
         for attempt in range(self._settings.RETRY_MAX_ATTEMPTS):
             try:
-                response = await self._http_client.request(
-                    method, url, headers=headers, json=json
-                )
+                response = await self._http_client.request(method, url, headers=headers, json=json)
             except httpx.TransportError as exc:
                 last_error = exc
             else:

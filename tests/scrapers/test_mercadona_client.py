@@ -35,7 +35,7 @@ BUNDLE_JS_WITH_CREDENTIALS = (
     'REACT_APP_ANALYTICS_DOMAIN:"tienda.mercadona.es"'
 )
 
-BUNDLE_JS_WITHOUT_CREDENTIALS = "REACT_APP_ANALYTICS_DOMAIN:\"tienda.mercadona.es\""
+BUNDLE_JS_WITHOUT_CREDENTIALS = 'REACT_APP_ANALYTICS_DOMAIN:"tienda.mercadona.es"'
 
 
 @pytest.fixture
@@ -56,9 +56,7 @@ async def test_search_returns_parsed_products(settings: Settings) -> None:
         mock.get("https://tienda.mercadona.es/asset-manifest.json").mock(
             return_value=httpx.Response(200, json=MANIFEST_PAYLOAD)
         )
-        mock.get(BUNDLE_URL).mock(
-            return_value=httpx.Response(200, text=BUNDLE_JS_WITH_CREDENTIALS)
-        )
+        mock.get(BUNDLE_URL).mock(return_value=httpx.Response(200, text=BUNDLE_JS_WITH_CREDENTIALS))
         mock.post(f"https://{FAKE_APP_ID}-dsn.algolia.net/1/indexes/*/queries").mock(
             return_value=httpx.Response(200, json=_algolia_response_with_one_hit())
         )
@@ -79,12 +77,10 @@ async def test_search_sends_correct_algolia_index_and_headers(settings: Settings
         mock.get("https://tienda.mercadona.es/asset-manifest.json").mock(
             return_value=httpx.Response(200, json=MANIFEST_PAYLOAD)
         )
-        mock.get(BUNDLE_URL).mock(
-            return_value=httpx.Response(200, text=BUNDLE_JS_WITH_CREDENTIALS)
-        )
-        algolia_route = mock.post(f"https://{FAKE_APP_ID}-dsn.algolia.net/1/indexes/*/queries").mock(
-            return_value=httpx.Response(200, json=_algolia_response_with_one_hit())
-        )
+        mock.get(BUNDLE_URL).mock(return_value=httpx.Response(200, text=BUNDLE_JS_WITH_CREDENTIALS))
+        algolia_route = mock.post(
+            f"https://{FAKE_APP_ID}-dsn.algolia.net/1/indexes/*/queries"
+        ).mock(return_value=httpx.Response(200, json=_algolia_response_with_one_hit()))
 
         async with httpx.AsyncClient() as http_client:
             client = MercadonaClient(http_client, settings)

@@ -10,9 +10,7 @@ import pytest
 import respx
 from httpx import AsyncClient
 
-FIXTURE_PATH = (
-    Path(__file__).parent.parent / "fixtures" / "mercadona_algolia_hit_sample.json"
-)
+FIXTURE_PATH = Path(__file__).parent.parent / "fixtures" / "mercadona_algolia_hit_sample.json"
 
 MANIFEST_URL = "https://tienda.mercadona.es/asset-manifest.json"
 BUNDLE_URL = "https://tienda.mercadona.es/v815/static/js/main.35c4c08c.chunk.js"

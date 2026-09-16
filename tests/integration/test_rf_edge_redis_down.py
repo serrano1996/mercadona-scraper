@@ -19,9 +19,7 @@ from redis.exceptions import ConnectionError as RedisConnectionError
 
 from app.main import app as fastapi_app
 
-FIXTURE_PATH = (
-    Path(__file__).parent.parent / "fixtures" / "mercadona_algolia_hit_sample.json"
-)
+FIXTURE_PATH = Path(__file__).parent.parent / "fixtures" / "mercadona_algolia_hit_sample.json"
 
 MANIFEST_URL = "https://tienda.mercadona.es/asset-manifest.json"
 BUNDLE_URL = "https://tienda.mercadona.es/v815/static/js/main.35c4c08c.chunk.js"
@@ -66,9 +64,7 @@ async def test_redis_down_degrades_to_direct_scrape(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     respx_mock.get(MANIFEST_URL).mock(
-        return_value=httpx.Response(
-            200, json={"main.js": "/v815/static/js/main.35c4c08c.chunk.js"}
-        )
+        return_value=httpx.Response(200, json={"main.js": "/v815/static/js/main.35c4c08c.chunk.js"})
     )
     respx_mock.get(BUNDLE_URL).mock(
         return_value=httpx.Response(200, text=BUNDLE_JS_WITH_CREDENTIALS)

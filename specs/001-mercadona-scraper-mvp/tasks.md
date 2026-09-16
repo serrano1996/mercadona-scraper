@@ -164,7 +164,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
 
 ## Cierre
 
-- [ ] **T25 — Lint, format y cobertura**
+- [x] **T25 — Lint, format y cobertura** *(99% real, objetivo 80%)*
   `ruff check . && ruff format .` limpio; `pytest --cov=app` ≥ 80%.
   Depende: T19–T24.
   RF: NFR de calidad (constitución #7, #8).

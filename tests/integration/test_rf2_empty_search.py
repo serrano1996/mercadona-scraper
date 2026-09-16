@@ -21,9 +21,7 @@ BUNDLE_JS_WITH_CREDENTIALS = (
 
 def _mock_upstream_chain_with_no_hits(respx_mock: respx.MockRouter) -> None:
     respx_mock.get(MANIFEST_URL).mock(
-        return_value=httpx.Response(
-            200, json={"main.js": "/v815/static/js/main.35c4c08c.chunk.js"}
-        )
+        return_value=httpx.Response(200, json={"main.js": "/v815/static/js/main.35c4c08c.chunk.js"})
     )
     respx_mock.get(BUNDLE_URL).mock(
         return_value=httpx.Response(200, text=BUNDLE_JS_WITH_CREDENTIALS)

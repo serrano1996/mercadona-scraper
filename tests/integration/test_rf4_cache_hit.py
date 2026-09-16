@@ -8,9 +8,7 @@ import httpx
 import respx
 from httpx import AsyncClient
 
-FIXTURE_PATH = (
-    Path(__file__).parent.parent / "fixtures" / "mercadona_algolia_hit_sample.json"
-)
+FIXTURE_PATH = Path(__file__).parent.parent / "fixtures" / "mercadona_algolia_hit_sample.json"
 
 MANIFEST_URL = "https://tienda.mercadona.es/asset-manifest.json"
 BUNDLE_URL = "https://tienda.mercadona.es/v815/static/js/main.35c4c08c.chunk.js"
@@ -30,9 +28,7 @@ async def test_second_identical_request_served_from_cache(
     client: AsyncClient, respx_mock: respx.MockRouter
 ) -> None:
     manifest_route = respx_mock.get(MANIFEST_URL).mock(
-        return_value=httpx.Response(
-            200, json={"main.js": "/v815/static/js/main.35c4c08c.chunk.js"}
-        )
+        return_value=httpx.Response(200, json={"main.js": "/v815/static/js/main.35c4c08c.chunk.js"})
     )
     bundle_route = respx_mock.get(BUNDLE_URL).mock(
         return_value=httpx.Response(200, text=BUNDLE_JS_WITH_CREDENTIALS)

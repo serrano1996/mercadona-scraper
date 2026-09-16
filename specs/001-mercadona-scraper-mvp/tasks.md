@@ -150,7 +150,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-4.
   Hecho cuando: test pasa en verde.
 
-- [ ] **T23 — Integración caso límite: Redis caído**
+- [x] **T23 — Integración caso límite: Redis caído**
   Mock Redis lanzando `ConnectionError` → response sigue siendo 200 vía scraping directo + warning en logs.
   Depende: T18.
   RF: caso límite "Caché inaccesible".

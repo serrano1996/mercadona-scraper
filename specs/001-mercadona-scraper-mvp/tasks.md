@@ -4,7 +4,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
 
 ## Setup
 
-- [ ] **T1 — Scaffolding del proyecto**
+- [x] **T1 — Scaffolding del proyecto**
   Crear `pyproject.toml` (Python 3.11+, deps: fastapi, pydantic v2, pydantic-settings, httpx, redis), estructura `app/{core,api/v1,models,scrapers,services,mappers}/__init__.py`.
   RF: base (ninguno específico).
   Hecho cuando: `python -c "import app"` no falla; `ruff check .` limpio.

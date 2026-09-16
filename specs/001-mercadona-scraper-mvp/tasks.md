@@ -65,7 +65,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-1.
   Hecho cuando: test con `respx` mockeando las 3 llamadas (formas reales capturadas) → devuelve `list[RawAlgoliaProduct]` parseada correctamente; test con bundle sin credenciales → `AlgoliaCredentialsUnavailable`.
 
-- [ ] **T10 — Retry/backoff exponencial**
+- [x] **T10 — Retry/backoff exponencial**
   Reintenta hasta `RETRY_MAX_ATTEMPTS` sólo en 5xx/timeout/error de conexión (Decisión D1/D2). 4xx no reintenta.
   Depende: T9.
   RF: RF-3.

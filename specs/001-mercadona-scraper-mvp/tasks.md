@@ -29,7 +29,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-1.
   Hecho cuando: falta `postal_code` o `term` → `ValidationError`; ambos presentes → instancia válida.
 
-- [ ] **T5 — `ProductOut`, `SearchMeta`, `ProductSearchResponse` (`models/product.py`)**
+- [x] **T5 — `ProductOut`, `SearchMeta`, `ProductSearchResponse` (`models/product.py`)**
   `price_format: str | None` nullable (caso límite).
   Depende: T1.
   RF: RF-1, RF-2.

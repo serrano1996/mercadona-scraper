@@ -125,6 +125,13 @@ Todo en `pytest` + `pytest-asyncio`. Mocks HTTP con `respx` sobre `httpx.AsyncCl
 
 **Cobertura:** objetivo >80% (criterios de finalización de spec.md), medida con `pytest --cov=app`.
 
-## 5. Punto abierto heredado de spec.md
+### D8 — Warehouse fijo (`mad1`) en el endpoint, sin resolver `postal_code → warehouse` todavía
+**Elegido:** `api/v1/products.py` usa un warehouse hardcodeado (`mad1`) para toda petición, ignorando el `postal_code` real más allá de validarlo como campo requerido (D4). `search_products` ya recibe `warehouse` como parámetro (T11/T12), así que esto es aislado a la ruta — cambiarlo después no toca el servicio.
+**Descartado (construir `WarehouseResolver` ahora):** portar/rehacer la lógica del proyecto `mercadona-scraper-old/` (retrieve-pc, change-pc, mapeo postal local) como parte de T14. Motivo del rechazo: es una pieza propia con su propio diseño y tests (ya resuelta una vez en ese proyecto), meterla dentro de "T14 — endpoint" la infla mucho más allá de lo que pide esa tarea; mejor como tarea propia más adelante.
+**Descartado (bloquear T14 hasta resolver la duda abierta de spec.md):** no tiene sentido — la duda abierta es sobre si `postal_code` debe ser *obligatorio* (ya resuelto en D4), no sobre cómo resolver el warehouse; son preguntas relacionadas pero distintas, bloquear todo el endpoint por esto para el MVP no aporta.
+**Coste asumido:** el MVP no refleja variación regional real de catálogo/precio (RF/NFR no lo exigen explícitamente todavía) — todas las peticiones ven el catálogo de `mad1` sin importar el `postal_code` enviado. Documentado aquí para no perder de vista que es una simplificación temporal, no la solución final.
+RF: **RF-1**. Bloqueante pendiente: tarea futura de resolución real `postal_code → warehouse` (candidato: reutilizar el enfoque de `WarehouseResolver` en `mercadona-scraper-old/`).
+
+## 6. Punto abierto heredado de spec.md
 
 La duda **[NECESITA ACLARACIÓN]** sobre si `postal_code`/tienda debe ser obligatorio sigue sin respuesta del negocio. Este plan asume "sí, obligatorio" (Decisión D4) para poder avanzar a diseño de tareas — si la respuesta real es "no", el cambio es aditivo (campo pasa a opcional + lógica de tienda por defecto), no rompe este plan.

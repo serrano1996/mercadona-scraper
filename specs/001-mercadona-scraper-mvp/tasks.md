@@ -93,7 +93,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
 
 ## API
 
-- [ ] **T14 — `api/v1/products.py`: endpoint**
+- [x] **T14 — `api/v1/products.py`: endpoint** *(warehouse fijo "mad1" provisional, ver Decisión D8 de plan.md)*
   `GET /api/v1/products` parsea query params a `ProductQuery`, llama `product_search`, devuelve `ProductSearchResponse`.
   Depende: T4, T12.
   RF: RF-1, RF-2.

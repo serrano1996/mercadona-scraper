@@ -121,7 +121,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
 
 ## Tests de integración end-to-end (sobre T17)
 
-- [ ] **T18 — Fixtures compartidas de test**
+- [x] **T18 — Fixtures compartidas de test**
   `conftest.py`: `TestClient`/`ASGITransport`, mock `respx` de Mercadona, `fakeredis` para cache.
   Depende: T17.
   RF: soporte de test (ninguno específico).

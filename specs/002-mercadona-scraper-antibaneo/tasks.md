@@ -2,7 +2,7 @@
 
 Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min.
 
-- [ ] **T1 — `Settings.RETRY_JITTER_MAX_S`**
+- [x] **T1 — `Settings.RETRY_JITTER_MAX_S`**
   Nuevo campo en `app/core/config.py`, mismo patrón que `RETRY_BASE_DELAY`/`RETRY_MAX_ATTEMPTS`: `RETRY_JITTER_MAX_S: float = 0.3`.
   Depende: —.
   RF: soporte de RF-5.

@@ -1,12 +1,12 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-import httpx
 from fastapi import FastAPI
 from redis.asyncio import Redis
 
 from app.api.v1.products import router as products_router
 from app.core.config import Settings
+from app.scrapers.http_client_factory import build_mercadona_http_client
 from app.scrapers.mercadona_client import MercadonaClient
 from app.services.cache import CacheRepository
 
@@ -14,7 +14,7 @@ from app.services.cache import CacheRepository
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = Settings()
-    http_client = httpx.AsyncClient()
+    http_client = build_mercadona_http_client()
     redis_client = Redis.from_url(settings.REDIS_URL)
 
     app.state.settings = settings

@@ -14,7 +14,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-1.
   Hecho cuando: test unitario — el `User-Agent` del cliente devuelto está en `USER_AGENTS`; `Accept-Language`/`Referer`/`Origin` presentes con el valor esperado.
 
-- [ ] **T3 — `main.py`: usa `build_mercadona_http_client()`**
+- [x] **T3 — `main.py`: usa `build_mercadona_http_client()`**
   Sustituye `httpx.AsyncClient()` a secas en el `lifespan` por `build_mercadona_http_client()` de T2.
   Depende: T2.
   RF: RF-1.

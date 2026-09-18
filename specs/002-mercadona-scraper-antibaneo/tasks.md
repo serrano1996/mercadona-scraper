@@ -56,7 +56,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-6.
   Hecho cuando: test — `client.search` lanza `httpx.HTTPStatusError(429)` → `product_search` lanza `UpstreamUnavailableError` (mismo assert que ya cubre 5xx en T13 de spec 001).
 
-- [ ] **T10 — Integración: `429` con `Retry-After` corto se absorbe, la API responde 200**
+- [x] **T10 — Integración: `429` con `Retry-After` corto se absorbe, la API responde 200**
   Sobre `tests/integration/` (T18 de spec 001): manifest devuelve `429` con `Retry-After` corto, luego `200` → `GET /api/v1/products` responde `200` final.
   Depende: T3, T7.
   RF: RF-2, RF-3, RF-5.

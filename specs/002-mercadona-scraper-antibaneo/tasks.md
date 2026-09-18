@@ -50,7 +50,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: NFR (no romper D2 de plan.md 001).
   Hecho cuando: test — `400` → 1 sola llamada, sin retry.
 
-- [ ] **T9 — `product_search.py`: `429` agotado → `UpstreamUnavailableError`**
+- [x] **T9 — `product_search.py`: `429` agotado → `UpstreamUnavailableError`**
   Amplía la condición existente (`except httpx.HTTPStatusError as exc: if exc.response.status_code >= 500`) a `>= 500 or == 429`.
   Depende: T5.
   RF: RF-6.

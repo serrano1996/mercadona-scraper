@@ -30,7 +30,7 @@ async def search_products(
     except httpx.TransportError as exc:
         raise UpstreamUnavailableError("Mercadona/Algolia is unreachable") from exc
     except httpx.HTTPStatusError as exc:
-        if exc.response.status_code >= 500:
+        if exc.response.status_code >= 500 or exc.response.status_code == 429:
             raise UpstreamUnavailableError(
                 f"Mercadona/Algolia returned {exc.response.status_code}"
             ) from exc

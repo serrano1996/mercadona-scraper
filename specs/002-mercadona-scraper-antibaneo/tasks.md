@@ -62,7 +62,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-2, RF-3, RF-5.
   Hecho cuando: test de integración en verde.
 
-- [ ] **T11 — Integración: `429` persistente → `502` en la API pública**
+- [x] **T11 — Integración: `429` persistente → `502` en la API pública**
   Mismo patrón que el 5xx-agotado de T21 (spec 001), pero con `429`.
   Depende: T9, T10.
   RF: RF-6.

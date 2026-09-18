@@ -57,3 +57,25 @@ async def test_429_with_short_retry_after_is_absorbed(
     assert response.status_code == 200
     assert manifest_route.call_count == 2
     assert len(response.json()["products"]) == 1
+
+
+async def test_persistent_429_returns_502(
+    client: AsyncClient, respx_mock: respx.MockRouter
+) -> None:
+    """T11 (spec 002) — same pattern as spec 001's persistent-5xx test
+    (T21), but with 429: the API consumer never needs to know Mercadona/
+    Algolia rate-limited us specifically (RF-6)."""
+    manifest_route = respx_mock.get(MANIFEST_URL).mock(
+        side_effect=[
+            httpx.Response(429, headers={"Retry-After": "0"}),
+            httpx.Response(429, headers={"Retry-After": "0"}),
+            httpx.Response(429, headers={"Retry-After": "0"}),
+        ]
+    )
+
+    response = await client.get(
+        "/api/v1/products", params={"postal_code": "28001", "term": "leche"}
+    )
+
+    assert response.status_code == 502
+    assert manifest_route.call_count == 3

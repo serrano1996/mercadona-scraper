@@ -36,6 +36,7 @@ def settings() -> Settings:
         REDIS_URL="redis://localhost:6379/0",
         RETRY_MAX_ATTEMPTS=3,
         RETRY_BASE_DELAY=0.0,
+        RETRY_JITTER_MAX_S=0.0,
     )
 
 
@@ -175,3 +176,65 @@ async def test_retry_after_above_cap_is_clamped_to_60s(
             await client.search(term="leche", warehouse="mad1")
 
     sleep_mock.assert_awaited_once_with(60.0)
+
+
+async def test_jitter_is_added_on_top_of_retry_after(monkeypatch: pytest.MonkeyPatch) -> None:
+    settings = Settings(
+        MERCADONA_BASE_URL="https://tienda.mercadona.es",
+        REDIS_URL="redis://localhost:6379/0",
+        RETRY_MAX_ATTEMPTS=3,
+        RETRY_BASE_DELAY=0.0,
+        RETRY_JITTER_MAX_S=0.3,
+    )
+    sleep_mock = AsyncMock()
+    monkeypatch.setattr("app.scrapers.mercadona_client.asyncio.sleep", sleep_mock)
+    monkeypatch.setattr("app.scrapers.mercadona_client.random.uniform", lambda _lo, _hi: 0.15)
+
+    with respx.mock(assert_all_called=True) as mock:
+        mock.get(MANIFEST_URL).mock(
+            side_effect=[
+                httpx.Response(429, headers={"Retry-After": "10"}),
+                httpx.Response(200, json=MANIFEST_PAYLOAD),
+            ]
+        )
+        mock.get(BUNDLE_URL).mock(return_value=httpx.Response(200, text=BUNDLE_JS_WITH_CREDENTIALS))
+        mock.post(f"https://{FAKE_APP_ID}-dsn.algolia.net/1/indexes/*/queries").mock(
+            return_value=httpx.Response(200, json=_algolia_response_with_one_hit())
+        )
+
+        async with httpx.AsyncClient() as http_client:
+            client = MercadonaClient(http_client, settings)
+            await client.search(term="leche", warehouse="mad1")
+
+    sleep_mock.assert_awaited_once_with(10.15)
+
+
+async def test_jitter_is_added_on_top_of_exponential_backoff(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    settings = Settings(
+        MERCADONA_BASE_URL="https://tienda.mercadona.es",
+        REDIS_URL="redis://localhost:6379/0",
+        RETRY_MAX_ATTEMPTS=3,
+        RETRY_BASE_DELAY=0.5,
+        RETRY_JITTER_MAX_S=0.3,
+    )
+    sleep_mock = AsyncMock()
+    monkeypatch.setattr("app.scrapers.mercadona_client.asyncio.sleep", sleep_mock)
+    monkeypatch.setattr("app.scrapers.mercadona_client.random.uniform", lambda _lo, _hi: 0.15)
+
+    with respx.mock(assert_all_called=True) as mock:
+        mock.get(MANIFEST_URL).mock(
+            side_effect=[httpx.Response(503), httpx.Response(200, json=MANIFEST_PAYLOAD)]
+        )
+        mock.get(BUNDLE_URL).mock(return_value=httpx.Response(200, text=BUNDLE_JS_WITH_CREDENTIALS))
+        mock.post(f"https://{FAKE_APP_ID}-dsn.algolia.net/1/indexes/*/queries").mock(
+            return_value=httpx.Response(200, json=_algolia_response_with_one_hit())
+        )
+
+        async with httpx.AsyncClient() as http_client:
+            client = MercadonaClient(http_client, settings)
+            await client.search(term="leche", warehouse="mad1")
+
+    # base backoff for attempt 0 is RETRY_BASE_DELAY * 2**0 = 0.5, + jitter 0.15
+    sleep_mock.assert_awaited_once_with(0.65)

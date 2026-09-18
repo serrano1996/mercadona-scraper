@@ -38,7 +38,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-4.
   Hecho cuando: test — `Retry-After: 120` produce un delay efectivo de 60, no 120.
 
-- [ ] **T7 — `mercadona_client.py`: jitter aditivo**
+- [x] **T7 — `mercadona_client.py`: jitter aditivo**
   `delay_final = componente_base + random.uniform(0, settings.RETRY_JITTER_MAX_S)` (T1), aplicado tanto al delay de `429` (T5/T6) como al backoff exponencial ya existente para 5xx/timeout/conexión.
   Depende: T1, T5.
   RF: RF-5.

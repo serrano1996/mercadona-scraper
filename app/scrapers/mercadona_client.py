@@ -13,6 +13,7 @@ hits for "leche"). See Decision D7 in plan.md.
 
 import asyncio
 import logging
+import random
 import re
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
@@ -168,11 +169,12 @@ class MercadonaClient:
                 last_error, retry_after_delay = outcome
             is_last_attempt = attempt == self._settings.RETRY_MAX_ATTEMPTS - 1
             if not is_last_attempt:
-                delay = (
+                base_delay = (
                     retry_after_delay
                     if retry_after_delay is not None
                     else self._settings.RETRY_BASE_DELAY * (2**attempt)
                 )
+                delay = base_delay + random.uniform(0, self._settings.RETRY_JITTER_MAX_S)
                 logger.warning("Retrying %s %s after error: %s", method, url, last_error)
                 await asyncio.sleep(delay)
         raise last_error

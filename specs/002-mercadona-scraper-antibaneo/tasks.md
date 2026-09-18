@@ -8,7 +8,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: soporte de RF-5.
   Hecho cuando: test unitario — `Settings(...)` sin la env var da `0.3` por defecto; con la env var puesta, la respeta.
 
-- [ ] **T2 — `scrapers/http_client_factory.py`: pool de User-Agents + factory**
+- [x] **T2 — `scrapers/http_client_factory.py`: pool de User-Agents + factory**
   `USER_AGENTS: list[str]` (las 6 entradas de spec.md RF-1) y `build_mercadona_http_client() -> httpx.AsyncClient`: elige un UA al azar, construye el cliente con `User-Agent` + `Accept-Language: es-ES,es;q=0.9` + `Referer`/`Origin` de `https://tienda.mercadona.es/`.
   Depende: —.
   RF: RF-1.

@@ -2,7 +2,7 @@
 
 Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min.
 
-- [ ] **T1 — `Settings.LOG_LEVEL`**
+- [x] **T1 — `Settings.LOG_LEVEL`**
   Nuevo campo en `app/core/config.py`: `LOG_LEVEL: str = "INFO"`, mismo patrón que los campos ya existentes.
   Depende: —.
   RF: soporte de RF-1.

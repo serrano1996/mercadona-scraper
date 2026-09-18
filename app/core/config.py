@@ -10,3 +10,4 @@ class Settings(BaseSettings):
     RETRY_MAX_ATTEMPTS: int = 3
     RETRY_BASE_DELAY: float = 0.5
     RETRY_JITTER_MAX_S: float = 0.3
+    LOG_LEVEL: str = "INFO"

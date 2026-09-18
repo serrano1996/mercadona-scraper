@@ -26,6 +26,7 @@ def test_settings_defaults(required_env: None) -> None:
     assert settings.RETRY_MAX_ATTEMPTS == 3
     assert settings.RETRY_BASE_DELAY > 0
     assert settings.RETRY_JITTER_MAX_S == 0.3
+    assert settings.LOG_LEVEL == "INFO"
 
 
 def test_settings_env_overrides_defaults(
@@ -34,12 +35,14 @@ def test_settings_env_overrides_defaults(
     monkeypatch.setenv("CACHE_TTL_SECONDS", "60")
     monkeypatch.setenv("RETRY_MAX_ATTEMPTS", "5")
     monkeypatch.setenv("RETRY_JITTER_MAX_S", "0.75")
+    monkeypatch.setenv("LOG_LEVEL", "DEBUG")
 
     settings = Settings()
 
     assert settings.CACHE_TTL_SECONDS == 60
     assert settings.RETRY_MAX_ATTEMPTS == 5
     assert settings.RETRY_JITTER_MAX_S == 0.75
+    assert settings.LOG_LEVEL == "DEBUG"
 
 
 def test_settings_missing_required_env_raises(monkeypatch: pytest.MonkeyPatch) -> None:

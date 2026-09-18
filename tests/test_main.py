@@ -2,6 +2,8 @@
 lifespan wires httpx/redis clients into app.state for the route
 dependencies (app/api/v1/products.py) to read."""
 
+import logging
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -44,3 +46,12 @@ def test_mercadona_client_uses_a_pooled_user_agent() -> None:
     with TestClient(app):
         http_client = app.state.mercadona_client._http_client
         assert http_client.headers["User-Agent"] in USER_AGENTS
+
+
+def test_lifespan_configures_logging(monkeypatch: pytest.MonkeyPatch) -> None:
+    """T3 — 003-mercadona-scaper-logging: main.py's lifespan calls
+    configure_logging(settings.LOG_LEVEL) (spec.md RF-1)."""
+    monkeypatch.setenv("LOG_LEVEL", "DEBUG")
+
+    with TestClient(app):
+        assert logging.getLogger().level == logging.DEBUG

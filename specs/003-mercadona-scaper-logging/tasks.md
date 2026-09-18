@@ -14,7 +14,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-1, soporte de RF-7.
   Hecho cuando: test unitario — `configure_logging("DEBUG")` deja el logger raíz en `DEBUG`; el filtro inyecta `"-"` sin contexto activo y el valor real dentro de un `with` que lo fija.
 
-- [ ] **T3 — `main.py`: llama `configure_logging()` en el `lifespan`**
+- [x] **T3 — `main.py`: llama `configure_logging()` en el `lifespan`**
   Primera línea del `lifespan`, tras construir `settings = Settings()`: `configure_logging(settings.LOG_LEVEL)`.
   Depende: T1, T2.
   RF: RF-1.

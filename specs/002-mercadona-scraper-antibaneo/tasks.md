@@ -44,7 +44,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-5.
   Hecho cuando: test con `RETRY_JITTER_MAX_S` fijo y `random.uniform` mockeado — el delay incluye el componente jitter; con `RETRY_JITTER_MAX_S=0` el comportamiento es determinista y la suite de T10 (spec 001) sigue en verde sin modificarla.
 
-- [ ] **T8 — Regresión: un 4xx que no es `429` sigue sin reintentar**
+- [x] **T8 — Regresión: un 4xx que no es `429` sigue sin reintentar**
   Verificar explícitamente que el cambio de T5 no afecta el resto de 4xx (D2 de plan.md 001).
   Depende: T5.
   RF: NFR (no romper D2 de plan.md 001).

@@ -1,5 +1,11 @@
-"""T10 — MercadonaClient retries on 5xx/connection errors (Decision D1/D2 in
-plan.md), up to RETRY_MAX_ATTEMPTS, with no retry on 4xx."""
+"""T10 (spec 001) — MercadonaClient retries on 5xx/connection errors
+(Decision D1/D2 in plan.md), up to RETRY_MAX_ATTEMPTS, with no retry on
+4xx. Extended for T2-T7 (spec 002, 002-mercadona-scraper-antibaneo):
+User-Agent factory wiring, Retry-After parsing/capping/jitter for 429.
+
+test_does_not_retry_on_4xx also serves as T8's regression check (spec
+002): confirms the 429 branch added in T5 didn't change behavior for any
+other 4xx (Decision D2 in plan.md 002)."""
 
 import json
 from pathlib import Path

@@ -20,7 +20,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-1.
   Hecho cuando: la suite de `tests/test_main.py` (T17 de spec 001) sigue en verde; test nuevo o ampliado confirma que el cliente en `app.state.mercadona_client` usa un `User-Agent` del pool.
 
-- [ ] **T4 — `mercadona_client.py`: `_parse_retry_after()` pura**
+- [x] **T4 — `mercadona_client.py`: `_parse_retry_after()` pura**
   Función `_parse_retry_after(value: str | None) -> float | None`: intenta segundos (`float()`), si falla intenta fecha HTTP (`email.utils.parsedate_to_datetime`), si ambos fallan o `value` es `None` devuelve `None`.
   Depende: —.
   RF: RF-2, RF-3.

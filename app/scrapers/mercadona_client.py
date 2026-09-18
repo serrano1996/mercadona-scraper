@@ -14,6 +14,8 @@ hits for "leche"). See Decision D7 in plan.md.
 import asyncio
 import logging
 import re
+from datetime import UTC, datetime
+from email.utils import parsedate_to_datetime
 from urllib.parse import quote
 
 import httpx
@@ -28,6 +30,25 @@ _API_KEY_PATTERN = re.compile(r'REACT_APP_ALGOLIA_KEY:"([a-f0-9]{20,40})"')
 _INDEX_PREFIX_PATTERN = re.compile(r'REACT_APP_ALGOLIA_NAME:"([a-z_]+)"')
 
 _ALGOLIA_HITS_PER_PAGE = 50
+
+
+def _parse_retry_after(value: str | None) -> float | None:
+    """Parses a Retry-After header value per the two formats the HTTP
+    standard allows: seconds, or an HTTP-date. Returns None if `value` is
+    absent or matches neither format (spec 002 RF-2/RF-3, Decision D3)."""
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except ValueError:
+        pass
+    try:
+        retry_at = parsedate_to_datetime(value)
+    except (TypeError, ValueError):
+        return None
+    if retry_at.tzinfo is None:
+        retry_at = retry_at.replace(tzinfo=UTC)
+    return max((retry_at - datetime.now(UTC)).total_seconds(), 0.0)
 
 
 class AlgoliaCredentialsUnavailable(Exception):

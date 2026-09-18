@@ -68,7 +68,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-6.
   Hecho cuando: test de integración en verde.
 
-- [ ] **T12 — Lint, format y cobertura**
+- [x] **T12 — Lint, format y cobertura** *(99% real, objetivo 80%)*
   `ruff check . && ruff format .` limpio; `pytest --cov=app` ≥80% sobre el código nuevo/modificado (mismo criterio que T25 de spec 001).
   Depende: T1–T11.
   RF: NFR de calidad (constitución #7, #8).

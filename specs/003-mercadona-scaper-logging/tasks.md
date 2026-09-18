@@ -8,7 +8,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: soporte de RF-1.
   Hecho cuando: test unitario — `Settings(...)` sin la env var da `"INFO"` por defecto; con la env var puesta, la respeta.
 
-- [ ] **T2 — `core/logging_config.py`: `configure_logging()` + filtro de request-id**
+- [x] **T2 — `core/logging_config.py`: `configure_logging()` + filtro de request-id**
   `configure_logging(level: str) -> None` (usa `logging.basicConfig`, formato con timestamp/nivel/logger/`request_id`/mensaje). `ContextVar[str | None]` para el request-id + `logging.Filter` que inyecta `record.request_id` (valor real si hay contexto de petición activo, `"-"` si no) — instalado en `configure_logging`. Expone una función/context manager para que el middleware (T4) fije el `ContextVar` por petición.
   Depende: —.
   RF: RF-1, soporte de RF-7.

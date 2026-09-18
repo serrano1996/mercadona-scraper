@@ -120,26 +120,40 @@ class MercadonaClient:
         headers: dict[str, str] | None = None,
         json: dict[str, object] | None = None,
     ) -> httpx.Response:
-        """Retry only on 5xx/timeout/connection errors, up to RETRY_MAX_ATTEMPTS,
-        with exponential backoff (Decision D1/D2 in plan.md). A 4xx response is
-        returned immediately, untouched, for the caller's own raise_for_status()."""
+        """Retry on 5xx/timeout/connection errors and on 429 Too Many
+        Requests, up to RETRY_MAX_ATTEMPTS (Decision D1/D2 in plan.md 001;
+        D2 in plan.md 002 for 429). A 4xx other than 429 is returned
+        immediately, untouched, for the caller's own raise_for_status()."""
         last_error: Exception
         for attempt in range(self._settings.RETRY_MAX_ATTEMPTS):
+            retry_after_delay: float | None = None
             try:
                 response = await self._http_client.request(method, url, headers=headers, json=json)
             except httpx.TransportError as exc:
                 last_error = exc
             else:
-                if response.status_code < 500:
+                if response.status_code == 429:
+                    retry_after_delay = _parse_retry_after(response.headers.get("Retry-After"))
+                    last_error = httpx.HTTPStatusError(
+                        f"Too Many Requests for url '{url}'",
+                        request=response.request,
+                        response=response,
+                    )
+                elif response.status_code < 500:
                     return response
-                last_error = httpx.HTTPStatusError(
-                    f"Server error '{response.status_code}' for url '{url}'",
-                    request=response.request,
-                    response=response,
-                )
+                else:
+                    last_error = httpx.HTTPStatusError(
+                        f"Server error '{response.status_code}' for url '{url}'",
+                        request=response.request,
+                        response=response,
+                    )
             is_last_attempt = attempt == self._settings.RETRY_MAX_ATTEMPTS - 1
             if not is_last_attempt:
-                delay = self._settings.RETRY_BASE_DELAY * (2**attempt)
+                delay = (
+                    retry_after_delay
+                    if retry_after_delay is not None
+                    else self._settings.RETRY_BASE_DELAY * (2**attempt)
+                )
                 logger.warning("Retrying %s %s after error: %s", method, url, last_error)
                 await asyncio.sleep(delay)
         raise last_error

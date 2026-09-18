@@ -26,7 +26,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-2, RF-3.
   Hecho cuando: tests unitarios — segundos válidos, fecha HTTP válida, valor no parseable → `None`, `None` de entrada → `None`.
 
-- [ ] **T5 — `mercadona_client.py`: rama `429` en `_request_with_retry`** *(corrige bug real: hoy `429 < 500` se devuelve sin reintentar)*
+- [x] **T5 — `mercadona_client.py`: rama `429` en `_request_with_retry`** *(corrige bug real: hoy `429 < 500` se devuelve sin reintentar)*
   Antes del `if status_code < 500: return response` genérico, chequear `status_code == 429` explícitamente: usar `_parse_retry_after` (T4) sobre la cabecera `Retry-After`; si hay valor, ese es el delay base; si no, cae al backoff exponencial ya existente (D1 de plan.md 001). Reintenta igual que cualquier otro error retryable.
   Depende: T4.
   RF: RF-2.

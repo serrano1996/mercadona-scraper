@@ -91,3 +91,61 @@ async def test_does_not_retry_on_4xx(settings: Settings) -> None:
                 await client.search(term="leche", warehouse="mad1")
 
     assert route.call_count == 1
+
+
+async def test_429_with_retry_after_seconds_recovers(settings: Settings) -> None:
+    with respx.mock(assert_all_called=True) as mock:
+        manifest_route = mock.get(MANIFEST_URL).mock(
+            side_effect=[
+                httpx.Response(429, headers={"Retry-After": "0"}),
+                httpx.Response(200, json=MANIFEST_PAYLOAD),
+            ]
+        )
+        mock.get(BUNDLE_URL).mock(return_value=httpx.Response(200, text=BUNDLE_JS_WITH_CREDENTIALS))
+        mock.post(f"https://{FAKE_APP_ID}-dsn.algolia.net/1/indexes/*/queries").mock(
+            return_value=httpx.Response(200, json=_algolia_response_with_one_hit())
+        )
+
+        async with httpx.AsyncClient() as http_client:
+            client = MercadonaClient(http_client, settings)
+            products = await client.search(term="leche", warehouse="mad1")
+
+    assert manifest_route.call_count == 2
+    assert len(products) == 1
+
+
+async def test_429_without_retry_after_falls_back_to_backoff(settings: Settings) -> None:
+    with respx.mock(assert_all_called=True) as mock:
+        manifest_route = mock.get(MANIFEST_URL).mock(
+            side_effect=[httpx.Response(429), httpx.Response(200, json=MANIFEST_PAYLOAD)]
+        )
+        mock.get(BUNDLE_URL).mock(return_value=httpx.Response(200, text=BUNDLE_JS_WITH_CREDENTIALS))
+        mock.post(f"https://{FAKE_APP_ID}-dsn.algolia.net/1/indexes/*/queries").mock(
+            return_value=httpx.Response(200, json=_algolia_response_with_one_hit())
+        )
+
+        async with httpx.AsyncClient() as http_client:
+            client = MercadonaClient(http_client, settings)
+            products = await client.search(term="leche", warehouse="mad1")
+
+    assert manifest_route.call_count == 2
+    assert len(products) == 1
+
+
+async def test_persistent_429_exhausts_retries_and_raises(settings: Settings) -> None:
+    with respx.mock(assert_all_called=True) as mock:
+        route = mock.get(MANIFEST_URL).mock(
+            side_effect=[
+                httpx.Response(429, headers={"Retry-After": "0"}),
+                httpx.Response(429, headers={"Retry-After": "0"}),
+                httpx.Response(429, headers={"Retry-After": "0"}),
+            ]
+        )
+
+        async with httpx.AsyncClient() as http_client:
+            client = MercadonaClient(http_client, settings)
+            with pytest.raises(httpx.HTTPStatusError) as exc_info:
+                await client.search(term="leche", warehouse="mad1")
+
+    assert exc_info.value.response.status_code == 429
+    assert route.call_count == 3

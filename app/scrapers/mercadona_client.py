@@ -31,6 +31,11 @@ _INDEX_PREFIX_PATTERN = re.compile(r'REACT_APP_ALGOLIA_NAME:"([a-z_]+)"')
 
 _ALGOLIA_HITS_PER_PAGE = 50
 
+# Upper bound on how long a single retry waits because of a Retry-After
+# value, so a disproportionate or malicious value from the server can't
+# hang the process indefinitely (spec 002 RF-4).
+MAX_RETRY_AFTER_S = 60.0
+
 
 def _parse_retry_after(value: str | None) -> float | None:
     """Parses a Retry-After header value per the two formats the HTTP
@@ -49,6 +54,31 @@ def _parse_retry_after(value: str | None) -> float | None:
     if retry_at.tzinfo is None:
         retry_at = retry_at.replace(tzinfo=UTC)
     return max((retry_at - datetime.now(UTC)).total_seconds(), 0.0)
+
+
+def _error_for_response(
+    response: httpx.Response, url: str
+) -> tuple[Exception, float | None] | None:
+    """Returns None when `response` should be returned as-is (success, or a
+    4xx other than 429). Otherwise returns the error to raise if retries run
+    out, plus the Retry-After-derived delay for a 429 (None for 5xx, which
+    falls back to the caller's exponential backoff)."""
+    if response.status_code == 429:
+        retry_after_delay = _parse_retry_after(response.headers.get("Retry-After"))
+        if retry_after_delay is not None:
+            retry_after_delay = min(retry_after_delay, MAX_RETRY_AFTER_S)
+        error = httpx.HTTPStatusError(
+            f"Too Many Requests for url '{url}'", request=response.request, response=response
+        )
+        return error, retry_after_delay
+    if response.status_code < 500:
+        return None
+    error = httpx.HTTPStatusError(
+        f"Server error '{response.status_code}' for url '{url}'",
+        request=response.request,
+        response=response,
+    )
+    return error, None
 
 
 class AlgoliaCredentialsUnavailable(Exception):
@@ -132,21 +162,10 @@ class MercadonaClient:
             except httpx.TransportError as exc:
                 last_error = exc
             else:
-                if response.status_code == 429:
-                    retry_after_delay = _parse_retry_after(response.headers.get("Retry-After"))
-                    last_error = httpx.HTTPStatusError(
-                        f"Too Many Requests for url '{url}'",
-                        request=response.request,
-                        response=response,
-                    )
-                elif response.status_code < 500:
+                outcome = _error_for_response(response, url)
+                if outcome is None:
                     return response
-                else:
-                    last_error = httpx.HTTPStatusError(
-                        f"Server error '{response.status_code}' for url '{url}'",
-                        request=response.request,
-                        response=response,
-                    )
+                last_error, retry_after_delay = outcome
             is_last_attempt = attempt == self._settings.RETRY_MAX_ATTEMPTS - 1
             if not is_last_attempt:
                 delay = (

@@ -32,7 +32,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-2.
   Hecho cuando: test — `429` con `Retry-After` en segundos reintenta y recupera en el intento siguiente; `429` persistente agota `RETRY_MAX_ATTEMPTS` y propaga `httpx.HTTPStatusError` (429) tras el último intento.
 
-- [ ] **T6 — `mercadona_client.py`: tope `MAX_RETRY_AFTER_S = 60`**
+- [x] **T6 — `mercadona_client.py`: tope `MAX_RETRY_AFTER_S = 60`**
   El delay derivado de `Retry-After` (T5) se limita a 60s antes de usarse.
   Depende: T5.
   RF: RF-4.

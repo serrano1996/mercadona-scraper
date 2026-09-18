@@ -3,6 +3,7 @@ plan.md), up to RETRY_MAX_ATTEMPTS, with no retry on 4xx."""
 
 import json
 from pathlib import Path
+from unittest.mock import AsyncMock
 
 import httpx
 import pytest
@@ -149,3 +150,28 @@ async def test_persistent_429_exhausts_retries_and_raises(settings: Settings) ->
 
     assert exc_info.value.response.status_code == 429
     assert route.call_count == 3
+
+
+async def test_retry_after_above_cap_is_clamped_to_60s(
+    settings: Settings, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    sleep_mock = AsyncMock()
+    monkeypatch.setattr("app.scrapers.mercadona_client.asyncio.sleep", sleep_mock)
+
+    with respx.mock(assert_all_called=True) as mock:
+        mock.get(MANIFEST_URL).mock(
+            side_effect=[
+                httpx.Response(429, headers={"Retry-After": "120"}),
+                httpx.Response(200, json=MANIFEST_PAYLOAD),
+            ]
+        )
+        mock.get(BUNDLE_URL).mock(return_value=httpx.Response(200, text=BUNDLE_JS_WITH_CREDENTIALS))
+        mock.post(f"https://{FAKE_APP_ID}-dsn.algolia.net/1/indexes/*/queries").mock(
+            return_value=httpx.Response(200, json=_algolia_response_with_one_hit())
+        )
+
+        async with httpx.AsyncClient() as http_client:
+            client = MercadonaClient(http_client, settings)
+            await client.search(term="leche", warehouse="mad1")
+
+    sleep_mock.assert_awaited_once_with(60.0)

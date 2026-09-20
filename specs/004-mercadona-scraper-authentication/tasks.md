@@ -8,7 +8,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: soporte de RF-5.
   Hecho cuando: test unitario — `Settings(API_KEYS="a,b,c").api_keys == {"a", "b", "c"}`; espacios alrededor de las comas se recortan; `API_KEYS=""` (o sólo comas) da `frozenset()`.
 
-- [ ] **T2 — `core/security.py`: `verify_api_key` — cabecera ausente/vacía → 401**
+- [x] **T2 — `core/security.py`: `verify_api_key` — cabecera ausente/vacía → 401**
   Nueva dependencia FastAPI `verify_api_key(...)` usando `APIKeyHeader(name="X-API-Key", auto_error=False)` (Decisión D2). Si el valor es `None` o cadena vacía, lanza `HTTPException(401, detail=...)` con un cuerpo JSON fijo.
   Depende: T1.
   RF: RF-2.

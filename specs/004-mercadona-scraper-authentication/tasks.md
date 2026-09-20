@@ -56,7 +56,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: regresión de D1.
   Hecho cuando: test en verde, misma respuesta exacta que `test_get_products_returns_exact_response_shape` (T19 de spec 001) pero pasando por la autenticación.
 
-- [ ] **T10 — Lint, format y cobertura**
+- [x] **T10 — Lint, format y cobertura**
   `ruff check . && ruff format .` limpio; `pytest --cov=app` ≥80% sobre el código nuevo/modificado (mismo criterio que T12/T25 de specs 001-003).
   Depende: T1–T9.
   RF: NFR de calidad (constitución #7, #8).

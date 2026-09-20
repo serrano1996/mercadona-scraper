@@ -50,7 +50,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: caso límite de spec.md.
   Hecho cuando: test — `GET /docs` y `GET /openapi.json` sin cabecera → `200`.
 
-- [ ] **T9 — Integración: camino feliz sin cambios con token válido**
+- [x] **T9 — Integración: camino feliz sin cambios con token válido**
   Reutiliza el mock de upstream de `tests/integration/test_rf1_happy_path.py`, añadiendo la cabecera `X-API-Key` válida (fixture de T6): confirma que D1 no altera el flujo ni la respuesta esperada.
   Depende: T6.
   RF: regresión de D1.

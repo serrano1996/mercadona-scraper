@@ -74,7 +74,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: NFR de calidad (constitución #7, #8).
   Hecho cuando: ambos comandos terminan sin error y el reporte de cobertura no baja del 80%.
 
-- [ ] **T13 — Verificación manual**
+- [x] **T13 — Verificación manual**
   Levantar `uvicorn app.main:app`, provocar cada tipo de error (502 por upstream simulado, credenciales de Algolia no encontradas, reintentos agotados — todo simulado, mismo criterio que T13 de spec 002: nunca contra Mercadona real) y confirmar que cada uno deja una línea `ERROR` clara y con contexto suficiente.
   Depende: T12.
   RF: criterio de finalización de spec.md.

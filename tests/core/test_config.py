@@ -51,3 +51,42 @@ def test_settings_missing_required_env_raises(monkeypatch: pytest.MonkeyPatch) -
 
     with pytest.raises(ValidationError):
         Settings(_env_file=None)  # type: ignore[call-arg]
+
+
+def test_api_keys_defaults_to_empty(required_env: None) -> None:
+    """T1 — 004-mercadona-scraper-authentication: no API_KEYS configured
+    means no token is valid (spec.md RF-5)."""
+    settings = Settings()
+
+    assert settings.API_KEYS == ""
+    assert settings.api_keys == frozenset()
+
+
+def test_api_keys_parses_comma_separated_values(
+    required_env: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("API_KEYS", "a,b,c")
+
+    settings = Settings()
+
+    assert settings.api_keys == {"a", "b", "c"}
+
+
+def test_api_keys_strips_whitespace_around_commas(
+    required_env: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("API_KEYS", "a, b ,c")
+
+    settings = Settings()
+
+    assert settings.api_keys == {"a", "b", "c"}
+
+
+def test_api_keys_ignores_empty_entries(
+    required_env: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("API_KEYS", ",,")
+
+    settings = Settings()
+
+    assert settings.api_keys == frozenset()

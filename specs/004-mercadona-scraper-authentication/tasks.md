@@ -2,7 +2,7 @@
 
 Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min.
 
-- [ ] **T1 — `Settings.API_KEYS` + `api_keys` computed field**
+- [x] **T1 — `Settings.API_KEYS` + `api_keys` computed field**
   Nuevo campo `API_KEYS: str` (env var, coma-separado, ej. `API_KEYS=app1secret,app2secret`) y `computed_field` `api_keys: frozenset[str]` que hace `{k.strip() for k in API_KEYS.split(",") if k.strip()}` (Decisión D4 en plan.md).
   Depende: —.
   RF: soporte de RF-5.

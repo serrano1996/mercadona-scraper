@@ -56,7 +56,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-3.
   Hecho cuando: test — `UpstreamUnavailableError` mockeada → `caplog` contiene una línea `ERROR` con `postal_code`/`term` antes de la respuesta `502`.
 
-- [ ] **T10 — Integración: petición real deja logs de inicio/fin con el mismo `request_id`**
+- [x] **T10 — Integración: petición real deja logs de inicio/fin con el mismo `request_id`**
   Sobre `tests/integration/` (T18 de spec 001): una petición completa a través de la app real produce ambas líneas en `caplog` con idéntico `request_id`.
   Depende: T5.
   RF: RF-6, RF-7.

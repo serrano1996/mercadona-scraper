@@ -38,7 +38,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: regresión — mantiene en verde specs 001-003 tras activar RF-1.
   Hecho cuando: `pytest -q` completo en verde (no sólo los tests nuevos de esta spec).
 
-- [ ] **T7 — Integración: petición sin `X-API-Key` no toca lógica de negocio**
+- [x] **T7 — Integración: petición sin `X-API-Key` no toca lógica de negocio**
   Sobre `tests/integration/`: `GET /api/v1/products` sin cabecera → `401`, y los mocks de `MercadonaClient`/`CacheRepository`/respx no reciben ninguna llamada (la autenticación corta antes).
   Depende: T5.
   RF: RF-1.

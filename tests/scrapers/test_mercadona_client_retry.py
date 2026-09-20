@@ -5,9 +5,14 @@ User-Agent factory wiring, Retry-After parsing/capping/jitter for 429.
 
 test_does_not_retry_on_4xx also serves as T8's regression check (spec
 002): confirms the 429 branch added in T5 didn't change behavior for any
-other 4xx (Decision D2 in plan.md 002)."""
+other 4xx (Decision D2 in plan.md 002).
+
+test_exhausted_retries_logs_error (T7, spec 003) — exhausting retries
+also leaves an ERROR log line, distinct from the per-attempt WARNING
+lines, so this failure mode surfaces in the logs (spec.md RF-4)."""
 
 import json
+import logging
 from pathlib import Path
 from unittest.mock import AsyncMock
 
@@ -65,6 +70,27 @@ async def test_retries_up_to_max_attempts_then_raises_on_persistent_5xx(
                 await client.search(term="leche", warehouse="mad1")
 
     assert route.call_count == 3
+
+
+async def test_exhausted_retries_logs_error(
+    settings: Settings, caplog: pytest.LogCaptureFixture
+) -> None:
+    with respx.mock(assert_all_called=True) as mock:
+        mock.get(MANIFEST_URL).mock(
+            side_effect=[httpx.Response(503), httpx.Response(503), httpx.Response(503)]
+        )
+
+        async with httpx.AsyncClient() as http_client:
+            client = MercadonaClient(http_client, settings)
+            with caplog.at_level(logging.WARNING):
+                with pytest.raises(httpx.HTTPStatusError):
+                    await client.search(term="leche", warehouse="mad1")
+
+    error_logs = [r for r in caplog.records if r.levelno == logging.ERROR]
+    warning_logs = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert len(error_logs) == 1
+    assert MANIFEST_URL in error_logs[0].getMessage()
+    assert len(warning_logs) == 2
 
 
 async def test_recovers_on_third_attempt_after_two_5xx(settings: Settings) -> None:

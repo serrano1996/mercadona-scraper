@@ -38,7 +38,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-2.
   Hecho cuando: test — una ruta que lanza una excepción no prevista (mock) produce una línea `ERROR` con traceback en `caplog` y una respuesta `500`.
 
-- [ ] **T7 — `mercadona_client.py`: log `ERROR` en reintentos agotados**
+- [x] **T7 — `mercadona_client.py`: log `ERROR` en reintentos agotados**
   Justo antes de `raise last_error` (tras el bucle de `_request_with_retry`): `logger.error(...)` con el número de intentos y la URL.
   Depende: —.
   RF: RF-4.

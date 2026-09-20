@@ -177,4 +177,11 @@ class MercadonaClient:
                 delay = base_delay + random.uniform(0, self._settings.RETRY_JITTER_MAX_S)
                 logger.warning("Retrying %s %s after error: %s", method, url, last_error)
                 await asyncio.sleep(delay)
+        logger.error(
+            "Exhausted %d attempts for %s %s: %s",
+            self._settings.RETRY_MAX_ATTEMPTS,
+            method,
+            url,
+            last_error,
+        )
         raise last_error

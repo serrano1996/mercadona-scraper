@@ -68,7 +68,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: caso límite de spec.md (RF-6).
   Hecho cuando: test — petición sin `term` → `422` + líneas de inicio/fin en `caplog`.
 
-- [ ] **T12 — Lint, format y cobertura**
+- [x] **T12 — Lint, format y cobertura**
   `ruff check . && ruff format .` limpio; `pytest --cov=app` ≥80% sobre el código nuevo/modificado (mismo criterio que T25/T12 de specs 001/002).
   Depende: T1–T11.
   RF: NFR de calidad (constitución #7, #8).

@@ -20,7 +20,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-1.
   Hecho cuando: la suite de `tests/test_main.py` (T17 de spec 001) sigue en verde; test nuevo confirma que, tras entrar al lifespan con `LOG_LEVEL=DEBUG`, el logger raíz queda en `DEBUG`.
 
-- [ ] **T4 — `middleware/request_logging.py`: `RequestLoggingMiddleware`**
+- [x] **T4 — `middleware/request_logging.py`: `RequestLoggingMiddleware`**
   `BaseHTTPMiddleware` (Starlette): genera un request-id corto por petición, lo fija en el `ContextVar` de T2, loguea `INFO` de inicio (método, ruta, query params) y de fin (status code, duración en ms) alrededor de `call_next`.
   Depende: T2.
   RF: RF-6, RF-7.

@@ -44,7 +44,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-1.
   Hecho cuando: test de integración en verde, con aserciones explícitas de "no llamado" sobre los mocks/rutas respx.
 
-- [ ] **T8 — Integración: `/docs` y `/openapi.json` siguen públicos**
+- [x] **T8 — Integración: `/docs` y `/openapi.json` siguen públicos**
   Sobre `tests/test_main.py` (ya cubre `test_docs_load`/`test_openapi_schema_...`): confirma explícitamente que ambos responden `200` **sin** cabecera `X-API-Key` (spec.md, duda abierta #2 resuelta).
   Depende: T5.
   RF: caso límite de spec.md.

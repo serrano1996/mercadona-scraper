@@ -100,6 +100,18 @@ def test_products_router_requires_api_key() -> None:
     client_mock.search.assert_not_called()
 
 
+def test_docs_and_openapi_stay_public_without_api_key() -> None:
+    """T8 — 004-mercadona-scraper-authentication: only /api/v1/* requires
+    X-API-Key (T5's dependencies= is scoped to that router) — /docs and
+    /openapi.json are unaffected (spec.md, duda abierta #2 resuelta)."""
+    with TestClient(app) as client:
+        docs_response = client.get("/docs")
+        openapi_response = client.get("/openapi.json")
+
+    assert docs_response.status_code == 200
+    assert openapi_response.status_code == 200
+
+
 def test_request_logging_middleware_is_registered(
     caplog: pytest.LogCaptureFixture,
 ) -> None:

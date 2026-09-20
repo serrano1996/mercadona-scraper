@@ -62,7 +62,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: NFR de calidad (constitución #7, #8).
   Hecho cuando: ambos comandos terminan sin error y el reporte de cobertura no baja del 80%.
 
-- [ ] **T11 — Verificación manual**
+- [x] **T11 — Verificación manual**
   Levantar `uvicorn app.main:app`; probar con `curl`/similar: sin cabecera (401), con cabecera inválida (401), con cabecera válida (200/502 según upstream), y confirmar que ningún log expone el valor de `X-API-Key` en ningún caso.
   Depende: T10.
   RF: criterio de finalización de spec.md.

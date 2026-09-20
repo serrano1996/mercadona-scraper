@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -9,6 +10,8 @@ from app.models.query import ProductQuery
 from app.scrapers.mercadona_client import MercadonaClient
 from app.services.cache import CacheRepository
 from app.services.product_search import search_products
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -52,4 +55,5 @@ async def get_products(
             query, warehouse=_DEFAULT_WAREHOUSE, cache=cache, client=client, settings=settings
         )
     except UpstreamUnavailableError as exc:
+        logger.exception("Upstream unavailable for postal_code=%s term=%s", postal_code, term)
         raise HTTPException(status_code=502, detail="Mercadona is currently unavailable") from exc

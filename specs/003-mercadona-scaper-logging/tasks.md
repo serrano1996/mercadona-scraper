@@ -50,7 +50,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-5.
   Hecho cuando: test — bundle sin credenciales → `caplog` contiene una línea `ERROR` antes de la excepción.
 
-- [ ] **T9 — `api/v1/products.py`: log `ERROR` al traducir a 502**
+- [x] **T9 — `api/v1/products.py`: log `ERROR` al traducir a 502**
   Dentro del `except UpstreamUnavailableError as exc:`, antes de `raise HTTPException(502, ...)`: `logger.error(...)` con `postal_code`, `term` y la excepción.
   Depende: —.
   RF: RF-3.

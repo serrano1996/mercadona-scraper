@@ -55,3 +55,17 @@ def test_lifespan_configures_logging(monkeypatch: pytest.MonkeyPatch) -> None:
 
     with TestClient(app):
         assert logging.getLogger().level == logging.DEBUG
+
+
+def test_request_logging_middleware_is_registered(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """T5 — 003-mercadona-scaper-logging: RequestLoggingMiddleware (T4) is
+    wired into the real app, so a real request through it leaves start/end
+    log lines (spec.md RF-6/RF-7)."""
+    with caplog.at_level(logging.INFO):
+        with TestClient(app) as client:
+            client.get("/docs")
+
+    request_logs = [r for r in caplog.records if r.name == "app.middleware.request_logging"]
+    assert len(request_logs) == 2

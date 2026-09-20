@@ -26,7 +26,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-6, RF-7.
   Hecho cuando: test unitario (app mínima + `caplog`) — una petición produce una línea de inicio y una de fin con el mismo `request_id`; dos peticiones distintas tienen `request_id` distintos.
 
-- [ ] **T5 — `main.py`: registra el middleware**
+- [x] **T5 — `main.py`: registra el middleware**
   `app.add_middleware(RequestLoggingMiddleware)` al crear la instancia de `FastAPI`.
   Depende: T3, T4.
   RF: RF-6, RF-7.

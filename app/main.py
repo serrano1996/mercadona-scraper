@@ -7,6 +7,7 @@ from redis.asyncio import Redis
 from app.api.v1.products import router as products_router
 from app.core.config import Settings
 from app.core.logging_config import configure_logging
+from app.middleware.request_logging import RequestLoggingMiddleware
 from app.scrapers.http_client_factory import build_mercadona_http_client
 from app.scrapers.mercadona_client import MercadonaClient
 from app.services.cache import CacheRepository
@@ -30,4 +31,5 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(lifespan=lifespan)
+app.add_middleware(RequestLoggingMiddleware)
 app.include_router(products_router, prefix="/api/v1")

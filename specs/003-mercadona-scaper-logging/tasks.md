@@ -62,7 +62,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-6, RF-7.
   Hecho cuando: test de integración en verde.
 
-- [ ] **T11 — Caso límite: petición con validación fallida (422) también se loguea**
+- [x] **T11 — Caso límite: petición con validación fallida (422) también se loguea**
   Petición sin `postal_code` o `term` → Starlette responde `422` sin pasar por `get_products`; el middleware (T4/T5) igualmente registra inicio/fin.
   Depende: T5.
   RF: caso límite de spec.md (RF-6).

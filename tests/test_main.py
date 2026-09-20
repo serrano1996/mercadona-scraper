@@ -76,6 +76,24 @@ def test_request_logging_middleware_is_registered(
     assert len(request_logs) == 2
 
 
+def test_validation_failure_returns_422_and_logs_start_end(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """T11 — 003-mercadona-scaper-logging: a request missing a required
+    query param (term) fails validation (422) before reaching get_products,
+    but RequestLoggingMiddleware still wraps it (spec.md caso limite,
+    RF-6)."""
+    with caplog.at_level(logging.INFO):
+        with TestClient(app) as client:
+            response = client.get("/api/v1/products", params={"postal_code": "28001"})
+
+    assert response.status_code == 422
+    request_logs = [r for r in caplog.records if r.name == "app.middleware.request_logging"]
+    assert len(request_logs) == 2
+    assert request_logs[0].request_id == request_logs[1].request_id
+    assert "422" in request_logs[1].getMessage()
+
+
 def test_unhandled_exception_returns_500_and_logs_traceback(
     caplog: pytest.LogCaptureFixture,
 ) -> None:

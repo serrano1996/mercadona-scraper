@@ -15,11 +15,17 @@ from app.scrapers.http_client_factory import USER_AGENTS
 from app.scrapers.mercadona_client import MercadonaClient
 from app.services.cache import CacheRepository
 
+# T6 — 004-mercadona-scraper-authentication: shared valid token for tests
+# that need to get past auth to exercise what they actually test.
+# test_products_router_requires_api_key deliberately does NOT use this.
+TEST_API_KEY = "test-main-api-key"
+
 
 @pytest.fixture(autouse=True)
 def required_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("MERCADONA_BASE_URL", "https://tienda.mercadona.es")
     monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
+    monkeypatch.setenv("API_KEYS", TEST_API_KEY)
 
 
 def test_docs_load() -> None:
@@ -62,6 +68,38 @@ def test_lifespan_configures_logging(monkeypatch: pytest.MonkeyPatch) -> None:
         assert logging.getLogger().level == logging.DEBUG
 
 
+def test_products_router_requires_api_key() -> None:
+    """T5 — 004-mercadona-scraper-authentication: verify_api_key (T2-T4) is
+    wired into /api/v1/ via app.include_router's dependencies=, so a
+    request without X-API-Key never reaches business logic — proven here
+    by mocking MercadonaClient/CacheRepository and asserting they're never
+    called (spec.md RF-1). Uses dependency_overrides rather than the real
+    lifespan/httpx client so this test never risks a real network call to
+    Mercadona if authentication is misconfigured."""
+    cache = AsyncMock(spec=CacheRepository)
+    cache.get.return_value = None
+    client_mock = AsyncMock(spec=MercadonaClient)
+    client_mock.search.return_value = []
+
+    app.dependency_overrides[get_cache_repository] = lambda: cache
+    app.dependency_overrides[get_mercadona_client] = lambda: client_mock
+    app.dependency_overrides[get_settings] = lambda: Settings(
+        MERCADONA_BASE_URL="https://tienda.mercadona.es", REDIS_URL="redis://localhost:6379/0"
+    )
+
+    try:
+        with TestClient(app) as client:
+            response = client.get(
+                "/api/v1/products", params={"postal_code": "28001", "term": "leche"}
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 401
+    cache.get.assert_not_called()
+    client_mock.search.assert_not_called()
+
+
 def test_request_logging_middleware_is_registered(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
@@ -85,7 +123,11 @@ def test_validation_failure_returns_422_and_logs_start_end(
     RF-6)."""
     with caplog.at_level(logging.INFO):
         with TestClient(app) as client:
-            response = client.get("/api/v1/products", params={"postal_code": "28001"})
+            response = client.get(
+                "/api/v1/products",
+                params={"postal_code": "28001"},
+                headers={"X-API-Key": TEST_API_KEY},
+            )
 
     assert response.status_code == 422
     request_logs = [r for r in caplog.records if r.name == "app.middleware.request_logging"]
@@ -124,7 +166,9 @@ def test_unhandled_exception_returns_500_and_logs_traceback(
             # already-handled exception.
             with TestClient(app, raise_server_exceptions=False) as test_client:
                 response = test_client.get(
-                    "/api/v1/products", params={"postal_code": "28001", "term": "leche"}
+                    "/api/v1/products",
+                    params={"postal_code": "28001", "term": "leche"},
+                    headers={"X-API-Key": TEST_API_KEY},
                 )
     finally:
         app.dependency_overrides.clear()

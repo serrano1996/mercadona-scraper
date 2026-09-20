@@ -26,13 +26,13 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-6.
   Hecho cuando: test — un rechazo (ausente e inválida, ambos casos) deja una línea `WARNING` en `caplog`; se afirma explícitamente que el token de prueba usado no aparece en el texto de ningún record.
 
-- [ ] **T5 — `main.py`: aplica `verify_api_key` a `/api/v1/`**
+- [x] **T5 — `main.py`: aplica `verify_api_key` a `/api/v1/`**
   `app.include_router(products_router, prefix="/api/v1", dependencies=[Depends(verify_api_key)])` (Decisión D1).
   Depende: T4.
   RF: RF-1.
   Hecho cuando: test — `GET /api/v1/products` sin cabecera → `401` a través de la app real (antes tocaba lógica de negocio, ahora no).
 
-- [ ] **T6 — Actualiza tests existentes (specs 001-003) con una cabecera `X-API-Key` válida**
+- [x] **T6 — Actualiza tests existentes (specs 001-003) con una cabecera `X-API-Key` válida**
   Añade una constante/fixture compartida con un token de pruebas (ej. en `tests/conftest.py` o un fixture de `tests/integration/conftest.py`) y actualiza **todos** los tests existentes que golpean `/api/v1/products` directamente (`tests/api/`, `tests/integration/`, `tests/test_main.py`) para enviarla — ver nota de compatibilidad en plan.md sección 5.
   Depende: T5.
   RF: regresión — mantiene en verde specs 001-003 tras activar RF-1.

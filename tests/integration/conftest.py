@@ -14,11 +14,17 @@ from httpx import ASGITransport, AsyncClient
 
 from app.main import app as fastapi_app
 
+# T6 — 004-mercadona-scraper-authentication: shared valid token so every
+# integration test authenticates by default (the `client` fixture sends it
+# on every request) without each test having to know about auth.
+TEST_API_KEY = "integration-test-api-key"
+
 
 @pytest.fixture(autouse=True)
 def required_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("MERCADONA_BASE_URL", "https://tienda.mercadona.es")
     monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
+    monkeypatch.setenv("API_KEYS", TEST_API_KEY)
 
 
 class _FreshFakeRedisFactory:
@@ -40,6 +46,10 @@ async def client(monkeypatch: pytest.MonkeyPatch) -> AsyncIterator[AsyncClient]:
     transport = ASGITransport(app=fastapi_app)
     async with (
         fastapi_app.router.lifespan_context(fastapi_app),
-        AsyncClient(transport=transport, base_url="http://test") as http_client,
+        AsyncClient(
+            transport=transport,
+            base_url="http://test",
+            headers={"X-API-Key": TEST_API_KEY},
+        ) as http_client,
     ):
         yield http_client

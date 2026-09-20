@@ -2,13 +2,14 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse
 from redis.asyncio import Redis
 
 from app.api.v1.products import router as products_router
 from app.core.config import Settings
 from app.core.logging_config import configure_logging
+from app.core.security import verify_api_key
 from app.middleware.request_logging import RequestLoggingMiddleware
 from app.scrapers.http_client_factory import build_mercadona_http_client
 from app.scrapers.mercadona_client import MercadonaClient
@@ -36,7 +37,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(RequestLoggingMiddleware)
-app.include_router(products_router, prefix="/api/v1")
+app.include_router(products_router, prefix="/api/v1", dependencies=[Depends(verify_api_key)])
 
 
 @app.exception_handler(Exception)

@@ -18,6 +18,7 @@ from httpx import ASGITransport, AsyncClient
 from redis.exceptions import ConnectionError as RedisConnectionError
 
 from app.main import app as fastapi_app
+from tests.integration.conftest import TEST_API_KEY
 
 FIXTURE_PATH = Path(__file__).parent.parent / "fixtures" / "mercadona_algolia_hit_sample.json"
 
@@ -53,7 +54,11 @@ async def client_with_broken_redis(
     transport = ASGITransport(app=fastapi_app)
     async with (
         fastapi_app.router.lifespan_context(fastapi_app),
-        AsyncClient(transport=transport, base_url="http://test") as http_client,
+        AsyncClient(
+            transport=transport,
+            base_url="http://test",
+            headers={"X-API-Key": TEST_API_KEY},
+        ) as http_client,
     ):
         yield http_client
 

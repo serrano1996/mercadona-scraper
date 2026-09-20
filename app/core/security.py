@@ -27,6 +27,7 @@ def _get_settings(request: Request) -> Settings:
 
 
 def verify_api_key(
+    request: Request,
     api_key: Annotated[str | None, Security(_api_key_header)] = None,
     settings: Annotated[Settings, Depends(_get_settings)] = None,  # type: ignore[assignment]
 ) -> None:
@@ -37,4 +38,7 @@ def verify_api_key(
     if not api_key or not any(
         secrets.compare_digest(api_key, valid_key) for valid_key in settings.api_keys
     ):
+        # Never log `api_key` itself (plan.md Decision D5, spec.md RF-6) —
+        # only the path, same as T7-T9 of spec 003 never logging secrets.
+        logger.warning("Rejected unauthenticated request to %s", request.url.path)
         raise HTTPException(status_code=401, detail=_UNAUTHORIZED_DETAIL)

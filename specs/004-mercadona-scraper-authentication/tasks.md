@@ -20,7 +20,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-1, RF-3, RF-4.
   Hecho cuando: test unitario — token que no está en `api_keys` → mismo `401`/`detail` que T2; token que sí está (probado con varios tokens configurados a la vez, no sólo uno) → no lanza; se verifica (vía `monkeypatch`/spy) que la comparación pasa por `secrets.compare_digest`, no por `==`/`in` directo.
 
-- [ ] **T4 — `core/security.py`: log `WARNING` en rechazo, sin loguear el token**
+- [x] **T4 — `core/security.py`: log `WARNING` en rechazo, sin loguear el token**
   Dentro de `verify_api_key`, justo antes de cada `HTTPException(401)` (los de T2 y T3): `logger.warning(...)` con la ruta solicitada (Decisión D5) — nunca el valor de la cabecera recibida.
   Depende: T3.
   RF: RF-6.

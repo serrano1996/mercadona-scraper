@@ -44,7 +44,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-4.
   Hecho cuando: test — tras agotar `RETRY_MAX_ATTEMPTS` con 5xx o 429 persistente, `caplog` contiene una línea `ERROR` (distinta de los `WARNING` por intento ya existentes).
 
-- [ ] **T8 — `mercadona_client.py`: log `ERROR` en `AlgoliaCredentialsUnavailable`**
+- [x] **T8 — `mercadona_client.py`: log `ERROR` en `AlgoliaCredentialsUnavailable`**
   Justo antes de `raise AlgoliaCredentialsUnavailable(...)`: `logger.error(...)` con el contexto del bundle que falló.
   Depende: —.
   RF: RF-5.

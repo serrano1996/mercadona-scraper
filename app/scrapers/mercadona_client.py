@@ -127,9 +127,8 @@ class MercadonaClient:
         manifest_response.raise_for_status()
         main_js_path = manifest_response.json()["main.js"]
 
-        bundle_response = await self._request_with_retry(
-            "GET", f"{self._settings.MERCADONA_BASE_URL}{main_js_path}"
-        )
+        bundle_url = f"{self._settings.MERCADONA_BASE_URL}{main_js_path}"
+        bundle_response = await self._request_with_retry("GET", bundle_url)
         bundle_response.raise_for_status()
         js = bundle_response.text
 
@@ -137,6 +136,7 @@ class MercadonaClient:
         api_key_match = _API_KEY_PATTERN.search(js)
         index_prefix_match = _INDEX_PREFIX_PATTERN.search(js)
         if not (app_id_match and api_key_match and index_prefix_match):
+            logger.error("Algolia credentials not found in bundle %s", bundle_url)
             raise AlgoliaCredentialsUnavailable(
                 "Could not find Algolia credentials in Mercadona's legacy bundle; "
                 "it may have been taken down (see Decision D7 in plan.md)."

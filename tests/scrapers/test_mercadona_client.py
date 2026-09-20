@@ -4,6 +4,7 @@ Decision D7 in plan.md). All shapes here are real, captured live on
 2026-09-16, not fabricated."""
 
 import json
+import logging
 from pathlib import Path
 
 import httpx
@@ -107,3 +108,27 @@ async def test_search_raises_when_credentials_not_found(settings: Settings) -> N
             client = MercadonaClient(http_client, settings)
             with pytest.raises(AlgoliaCredentialsUnavailable):
                 await client.search(term="leche", warehouse="mad1")
+
+
+async def test_search_logs_error_when_credentials_not_found(
+    settings: Settings, caplog: pytest.LogCaptureFixture
+) -> None:
+    """T8 — 003-mercadona-scaper-logging: extraction failure leaves an
+    ERROR log line naming the bundle URL that failed (spec.md RF-5)."""
+    with respx.mock(assert_all_called=True) as mock:
+        mock.get("https://tienda.mercadona.es/asset-manifest.json").mock(
+            return_value=httpx.Response(200, json=MANIFEST_PAYLOAD)
+        )
+        mock.get(BUNDLE_URL).mock(
+            return_value=httpx.Response(200, text=BUNDLE_JS_WITHOUT_CREDENTIALS)
+        )
+
+        async with httpx.AsyncClient() as http_client:
+            client = MercadonaClient(http_client, settings)
+            with caplog.at_level(logging.ERROR):
+                with pytest.raises(AlgoliaCredentialsUnavailable):
+                    await client.search(term="leche", warehouse="mad1")
+
+    error_logs = [r for r in caplog.records if r.levelno == logging.ERROR]
+    assert len(error_logs) == 1
+    assert BUNDLE_URL in error_logs[0].getMessage()

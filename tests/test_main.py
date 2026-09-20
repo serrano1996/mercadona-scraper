@@ -3,12 +3,17 @@ lifespan wires httpx/redis clients into app.state for the route
 dependencies (app/api/v1/products.py) to read."""
 
 import logging
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
 
+from app.api.v1.products import get_cache_repository, get_mercadona_client, get_settings
+from app.core.config import Settings
 from app.main import app
 from app.scrapers.http_client_factory import USER_AGENTS
+from app.scrapers.mercadona_client import MercadonaClient
+from app.services.cache import CacheRepository
 
 
 @pytest.fixture(autouse=True)
@@ -69,3 +74,44 @@ def test_request_logging_middleware_is_registered(
 
     request_logs = [r for r in caplog.records if r.name == "app.middleware.request_logging"]
     assert len(request_logs) == 2
+
+
+def test_unhandled_exception_returns_500_and_logs_traceback(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """T6 — 003-mercadona-scaper-logging: an exception product_search.py
+    doesn't translate (a real bug, not a Mercadona/Algolia failure) is
+    caught by a global exception handler, logged with its traceback, and
+    turned into a generic 500 — instead of leaking to uvicorn's own,
+    differently-configured logging (spec.md RF-2)."""
+    cache = AsyncMock(spec=CacheRepository)
+    cache.get.return_value = None
+    client = AsyncMock(spec=MercadonaClient)
+    client.search.side_effect = RuntimeError("boom")
+
+    app.dependency_overrides[get_cache_repository] = lambda: cache
+    app.dependency_overrides[get_mercadona_client] = lambda: client
+    app.dependency_overrides[get_settings] = lambda: Settings(
+        MERCADONA_BASE_URL="https://tienda.mercadona.es", REDIS_URL="redis://localhost:6379/0"
+    )
+
+    try:
+        with caplog.at_level(logging.ERROR):
+            # raise_server_exceptions=False: Starlette's ServerErrorMiddleware
+            # calls our handler AND sends its response correctly either way,
+            # but by design also re-raises afterwards so a real ASGI server
+            # can log it too — TestClient's default re-raises that into the
+            # test process itself. We want to inspect the response our
+            # handler produced, not have the test client propagate the
+            # already-handled exception.
+            with TestClient(app, raise_server_exceptions=False) as test_client:
+                response = test_client.get(
+                    "/api/v1/products", params={"postal_code": "28001", "term": "leche"}
+                )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 500
+    assert response.json() == {"detail": "Internal server error"}
+    error_logs = [r for r in caplog.records if r.levelno == logging.ERROR]
+    assert any(r.exc_info is not None for r in error_logs)

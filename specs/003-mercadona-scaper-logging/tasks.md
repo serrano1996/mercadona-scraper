@@ -32,7 +32,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-6, RF-7.
   Hecho cuando: la suite existente de `tests/api/` y `tests/integration/` sigue en verde; test nuevo confirma que una petición real a través de la app completa deja las líneas de inicio/fin en `caplog`.
 
-- [ ] **T6 — `main.py`: exception handler global**
+- [x] **T6 — `main.py`: exception handler global**
   `@app.exception_handler(Exception)`: `logger.exception(...)` (traceback completo) antes de devolver `500` genérico (`{"detail": "Internal server error"}`).
   Depende: T3.
   RF: RF-2.

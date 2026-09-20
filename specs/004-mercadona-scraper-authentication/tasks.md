@@ -14,7 +14,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-2.
   Hecho cuando: test unitario — llamar la dependencia sin cabecera, y con cabecera vacía (`X-API-Key: ""`), ambos casos lanzan `HTTPException` con `status_code == 401` y el mismo `detail`.
 
-- [ ] **T3 — `core/security.py`: comparación de token contra `settings.api_keys` (tiempo constante)**
+- [x] **T3 — `core/security.py`: comparación de token contra `settings.api_keys` (tiempo constante)**
   Extiende `verify_api_key`: si la cabecera está presente, compara contra cada token de `settings.api_keys` con `secrets.compare_digest` (Decisión D3); ninguna coincidencia → mismo `HTTPException(401)` y mismo `detail` que T2 (RF-3: sin distinguir "ausente" de "inválida"); alguna coincidencia → no lanza, la dependencia retorna.
   Depende: T1, T2.
   RF: RF-1, RF-3, RF-4.

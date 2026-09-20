@@ -4,6 +4,7 @@ our own apps can use the API, not third parties.
 """
 
 import logging
+import secrets
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request, Security
@@ -29,8 +30,11 @@ def verify_api_key(
     api_key: Annotated[str | None, Security(_api_key_header)] = None,
     settings: Annotated[Settings, Depends(_get_settings)] = None,  # type: ignore[assignment]
 ) -> None:
-    # Token comparison against settings.api_keys lands in T3 (plan.md
-    # Decision D3, constant-time via secrets.compare_digest); this task
-    # (T2) only covers the missing/empty-header case (spec.md RF-2).
-    if not api_key:
+    # secrets.compare_digest per candidate token (plan.md Decision D3):
+    # constant-time, so a mismatch doesn't leak timing information about
+    # how many leading characters matched (RF-4). Same 401/detail for
+    # "missing" and "invalid" (RF-2/RF-3) — no hint to a guesser.
+    if not api_key or not any(
+        secrets.compare_digest(api_key, valid_key) for valid_key in settings.api_keys
+    ):
         raise HTTPException(status_code=401, detail=_UNAUTHORIZED_DETAIL)

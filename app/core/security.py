@@ -11,6 +11,7 @@ from fastapi import Depends, HTTPException, Request, Security
 from fastapi.security import APIKeyHeader
 
 from app.core.config import Settings
+from app.core.dependencies import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -22,14 +23,10 @@ _UNAUTHORIZED_DETAIL = "Missing or invalid API key"
 _api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
-def _get_settings(request: Request) -> Settings:
-    return request.app.state.settings
-
-
 def verify_api_key(
     request: Request,
     api_key: Annotated[str | None, Security(_api_key_header)] = None,
-    settings: Annotated[Settings, Depends(_get_settings)] = None,  # type: ignore[assignment]
+    settings: Annotated[Settings, Depends(get_settings)] = None,  # type: ignore[assignment]
 ) -> None:
     # secrets.compare_digest per candidate token (plan.md Decision D3):
     # constant-time, so a mismatch doesn't leak timing information about

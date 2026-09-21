@@ -14,7 +14,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-4, RF-6.
   Hecho cuando: test unitario — cada provider, dado un `Request` cuyo `app.state` tiene `settings`/`cache_repository`/`mercadona_client` fijados, devuelve exactamente esos objetos (`is`, no sólo `==`).
 
-- [ ] **T3 — `core/security.py`: usa `get_settings` de `dependencies.py`**
+- [x] **T3 — `core/security.py`: usa `get_settings` de `dependencies.py`**
   Reemplaza `_get_settings` local por `from app.core.dependencies import get_settings`; `verify_api_key` pasa a depender de ese import.
   Depende: T2.
   RF: RF-4.

@@ -1,0 +1,26 @@
+# T2 — 005-mercadona-scraper-dockerization: keep the build context small
+# and never let secrets or dev-only files leak into the image (spec.md
+# RF-8, NFR "nunca credenciales en la imagen").
+
+.venv/
+.git/
+.gitignore
+__pycache__/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.coverage
+*.egg-info/
+tests/
+specs/
+docs/
+.atl/
+
+# Local secrets — never copied into the build context. Runtime config is
+# injected via docker-compose's env_file/environment instead (plan.md
+# Decision D5).
+.env
+
+CLAUDE.md
+agents.md

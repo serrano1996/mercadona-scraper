@@ -10,7 +10,7 @@ Nota (plan.md sección 5): la mayoría de estas tareas son de infraestructura, v
   RF: RF-9.
   Hecho cuando: test unitario en `tests/test_main.py` — `GET /health` sin `X-API-Key` → `200`, cuerpo `{"status": "ok"}`; `pytest -q` completo sigue en verde.
 
-- [ ] **T2 — `.dockerignore`**
+- [x] **T2 — `.dockerignore`**
   Excluye `.venv/`, `.git/`, `__pycache__/`, `tests/`, `specs/`, `docs/`, `.pytest_cache/`, `.ruff_cache/`, `.coverage`, `*.egg-info/`.
   Depende: —.
   RF: RF-8.

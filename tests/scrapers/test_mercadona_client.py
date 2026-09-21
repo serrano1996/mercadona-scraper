@@ -95,6 +95,30 @@ async def test_search_sends_correct_algolia_index_and_headers(settings: Settings
     assert "query=leche" in body["requests"][0]["params"]
 
 
+async def test_second_search_reuses_cached_algolia_credentials(settings: Settings) -> None:
+    """T5 — 006-mercadona-scraper-refactor: a second search() on the same
+    MercadonaClient instance reuses credentials fetched on the first call
+    — no repeat requests to asset-manifest.json/the bundle (spec.md RF-1)."""
+    with respx.mock(assert_all_called=True) as mock:
+        manifest_route = mock.get("https://tienda.mercadona.es/asset-manifest.json").mock(
+            return_value=httpx.Response(200, json=MANIFEST_PAYLOAD)
+        )
+        bundle_route = mock.get(BUNDLE_URL).mock(
+            return_value=httpx.Response(200, text=BUNDLE_JS_WITH_CREDENTIALS)
+        )
+        mock.post(f"https://{FAKE_APP_ID}-dsn.algolia.net/1/indexes/*/queries").mock(
+            return_value=httpx.Response(200, json=_algolia_response_with_one_hit())
+        )
+
+        async with httpx.AsyncClient() as http_client:
+            client = MercadonaClient(http_client, settings)
+            await client.search(term="leche", warehouse="mad1")
+            await client.search(term="agua", warehouse="mad1")
+
+    assert manifest_route.call_count == 1
+    assert bundle_route.call_count == 1
+
+
 async def test_search_raises_when_credentials_not_found(settings: Settings) -> None:
     with respx.mock(assert_all_called=True) as mock:
         mock.get("https://tienda.mercadona.es/asset-manifest.json").mock(

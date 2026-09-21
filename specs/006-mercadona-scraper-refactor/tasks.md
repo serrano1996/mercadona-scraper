@@ -26,7 +26,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-4, RF-5.
   Hecho cuando: `pytest -q` completo en verde **sin modificar ningún test existente** que importe estos providers desde `app.api.v1.products` (confirma RF-5/D5 — si hiciera falta tocar un test, D5 no se cumplió).
 
-- [ ] **T5 — `mercadona_client.py`: cachea credenciales de Algolia en memoria**
+- [x] **T5 — `mercadona_client.py`: cachea credenciales de Algolia en memoria**
   `self._algolia_credentials: tuple[str, str, str] | None = None` en `__init__`; `_get_algolia_credentials()` devuelve el valor cacheado si existe, sin repetir las peticiones a `/asset-manifest.json`/bundle (Decisión D1).
   Depende: —.
   RF: RF-1.

@@ -91,6 +91,10 @@ class MercadonaClient:
     def __init__(self, http_client: httpx.AsyncClient, settings: Settings) -> None:
         self._http_client = http_client
         self._settings = settings
+        # In-memory cache (spec 006, Decision D1): credentials only change
+        # if Mercadona redeploys the legacy bundle, not per search — avoids
+        # 2 extra HTTP round trips (manifest + bundle) on every call.
+        self._algolia_credentials: tuple[str, str, str] | None = None
 
     async def search(self, term: str, warehouse: str) -> list[RawAlgoliaProduct]:
         app_id, api_key, index_prefix = await self._get_algolia_credentials()
@@ -121,6 +125,9 @@ class MercadonaClient:
         return [RawAlgoliaProduct.model_validate(hit) for hit in hits]
 
     async def _get_algolia_credentials(self) -> tuple[str, str, str]:
+        if self._algolia_credentials is not None:
+            return self._algolia_credentials
+
         manifest_response = await self._request_with_retry(
             "GET", f"{self._settings.MERCADONA_BASE_URL}/asset-manifest.json"
         )
@@ -141,7 +148,12 @@ class MercadonaClient:
                 "Could not find Algolia credentials in Mercadona's legacy bundle; "
                 "it may have been taken down (see Decision D7 in plan.md)."
             )
-        return app_id_match.group(1), api_key_match.group(1), index_prefix_match.group(1)
+        self._algolia_credentials = (
+            app_id_match.group(1),
+            api_key_match.group(1),
+            index_prefix_match.group(1),
+        )
+        return self._algolia_credentials
 
     async def _request_with_retry(
         self,

@@ -100,6 +100,18 @@ def test_products_router_requires_api_key() -> None:
     client_mock.search.assert_not_called()
 
 
+def test_health_returns_ok_without_api_key() -> None:
+    """T1 — 005-mercadona-scraper-dockerization: GET /health responds 200
+    without requiring X-API-Key and without touching Settings/Redis/
+    MercadonaClient — used as the container's liveness probe (spec.md
+    RF-9)."""
+    with TestClient(app) as client:
+        response = client.get("/health")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
 def test_docs_and_openapi_stay_public_without_api_key() -> None:
     """T8 — 004-mercadona-scraper-authentication: only /api/v1/* requires
     X-API-Key (T5's dependencies= is scoped to that router) — /docs and

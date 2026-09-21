@@ -40,6 +40,11 @@ app.add_middleware(RequestLoggingMiddleware)
 app.include_router(products_router, prefix="/api/v1", dependencies=[Depends(verify_api_key)])
 
 
+@app.get("/health")
+async def health() -> dict[str, str]:
+    return {"status": "ok"}
+
+
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     logger.exception("Unhandled error processing %s %s", request.method, request.url.path)

@@ -4,7 +4,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
 
 Nota (plan.md sección 5): la mayoría de estas tareas son de infraestructura, verificables sólo manualmente (`pytest` no construye imágenes Docker) — sólo T1 tiene TDD real con `pytest`.
 
-- [ ] **T1 — `main.py`: `GET /health`**
+- [x] **T1 — `main.py`: `GET /health`**
   `@app.get("/health")` junto al exception handler global — sin dependencias, responde `{"status": "ok"}` con `200`, sin tocar `Settings`/Redis/`MercadonaClient` (Decisión D1 en plan.md).
   Depende: —.
   RF: RF-9.

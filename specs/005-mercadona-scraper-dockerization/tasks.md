@@ -40,7 +40,7 @@ Nota (plan.md sección 5): la mayoría de estas tareas son de infraestructura, v
   RF: RF-1, RF-9.
   Hecho cuando: ambas peticiones devuelven `200` contra el contenedor recién levantado.
 
-- [ ] **T7 — Verificación manual: fail-fast sin configuración obligatoria**
+- [x] **T7 — Verificación manual: fail-fast sin configuración obligatoria**
   `docker run` **sin** `MERCADONA_BASE_URL`/`REDIS_URL` — confirma que el contenedor termina (no queda "arriba" roto) y `docker logs` muestra el `ValidationError` de `Settings`.
   Depende: T4.
   RF: RF-6.

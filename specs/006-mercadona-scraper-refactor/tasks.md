@@ -44,7 +44,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-1, RF-3.
   Hecho cuando: test en verde con las aserciones de `call_count` explícitas para ambas búsquedas.
 
-- [ ] **T8 — Regresión: suite completa specs 001-005 intacta**
+- [x] **T8 — Regresión: suite completa specs 001-005 intacta**
   Confirma que ningún test de specs 001-005 se modificó salvo lo estrictamente necesario (que, gracias a D5, debería ser ninguno).
   Depende: T3, T4, T6, T7.
   RF: RF-5.

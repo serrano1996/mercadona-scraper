@@ -38,7 +38,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-2, RF-3.
   Hecho cuando: test — Algolia responde `401`/`403` con credenciales cacheadas y luego `200` con las credenciales frescas → la búsqueda tiene éxito; test — Algolia responde `401`/`403` con las credenciales frescas también → mismo error final que se propagaba antes del refactor (regresión explícita, no sólo happy path).
 
-- [ ] **T7 — Integración: conteo de peticiones salientes confirma el ahorro**
+- [x] **T7 — Integración: conteo de peticiones salientes confirma el ahorro**
   Sobre `tests/integration/` o `tests/scrapers/`: primera búsqueda con un `MercadonaClient` recién creado hace 3 peticiones (manifest + bundle + Algolia); segunda búsqueda sobre la misma instancia hace 1 (sólo Algolia) — confirmado con `respx`, nunca contra Mercadona real.
   Depende: T6.
   RF: RF-1, RF-3.

@@ -58,7 +58,7 @@ Nota (plan.md sección 5): la mayoría de estas tareas son de infraestructura, v
   RF: RF-10.
   Hecho cuando: el estado `healthy` aparece en la salida del comando.
 
-- [ ] **T10 — Verificación manual: `.dockerignore` excluye lo esperado**
+- [x] **T10 — Verificación manual: `.dockerignore` excluye lo esperado**
   Inspecciona la imagen resultante (`docker run --rm <image> ls -la /app` o `docker history`) y confirma que `tests/`, `.venv/`, `.git/`, `specs/`, `docs/` no están presentes.
   Depende: T4, T2.
   RF: RF-8.

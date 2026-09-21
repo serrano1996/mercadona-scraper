@@ -8,7 +8,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: soporte de RF-6.
   Hecho cuando: test unitario — `AppState(settings=..., cache_repository=..., mercadona_client=...)` se instancia y expone los tres atributos tal cual; `pytest -q` completo sigue en verde.
 
-- [ ] **T2 — `core/dependencies.py`: providers centralizados**
+- [x] **T2 — `core/dependencies.py`: providers centralizados**
   `get_settings`, `get_cache_repository`, `get_mercadona_client`, todos vía un único `_state(request) -> AppState` que hace `cast(AppState, request.app.state)` (Decisión D3/D4). Mismo comportamiento que las funciones que reemplazan — sólo centralización + tipado.
   Depende: T1.
   RF: RF-4, RF-6.

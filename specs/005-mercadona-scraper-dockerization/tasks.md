@@ -16,7 +16,7 @@ Nota (plan.md sección 5): la mayoría de estas tareas son de infraestructura, v
   RF: RF-8.
   Hecho cuando: el archivo existe con esas entradas; revisión manual de la lista contra `ls -a` del repo (no debe faltar ningún directorio pesado/irrelevante para el build).
 
-- [ ] **T3 — `Dockerfile`: stage `builder`**
+- [x] **T3 — `Dockerfile`: stage `builder`**
   `FROM python:3.11-slim AS builder`; copia `pyproject.toml` (+ `app/` para que `pip install .` resuelva el paquete); `pip install --no-cache-dir .` (sólo `[project.dependencies]`, nunca el grupo `dev` — Decisión D3).
   Depende: —.
   RF: RF-2.

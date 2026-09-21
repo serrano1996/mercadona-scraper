@@ -52,7 +52,7 @@ Nota (plan.md sección 5): la mayoría de estas tareas son de infraestructura, v
   RF: RF-4, RF-5.
   Hecho cuando: `docker compose exec api` conecta y hace `PING` al Redis del compose (`redis://redis:6379/0`) con éxito, y `GET /health` responde `200` dentro del contenedor.
 
-- [ ] **T9 — Verificación manual: `HEALTHCHECK` refleja el estado real**
+- [x] **T9 — Verificación manual: `HEALTHCHECK` refleja el estado real**
   Tras `docker compose up`, `docker compose ps` (o `docker ps`) muestra el contenedor `api` como `healthy` una vez pasa el `start-period`.
   Depende: T8.
   RF: RF-10.

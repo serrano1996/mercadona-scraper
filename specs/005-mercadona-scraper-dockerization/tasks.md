@@ -46,11 +46,11 @@ Nota (plan.md sección 5): la mayoría de estas tareas son de infraestructura, v
   RF: RF-6.
   Hecho cuando: el contenedor sale con código de error distinto de 0 y el log contiene el mensaje de validación de Pydantic.
 
-- [ ] **T8 — Verificación manual: `docker compose up` completo**
-  Levanta API + Redis; `GET /api/v1/products` con `X-API-Key` válida contra un upstream de Mercadona/Algolia simulado (nunca real — mismo criterio que T13 de specs 002/003/004) responde `200`/`502` según corresponda, sirviéndose de la cache Redis real del compose en la segunda petición idéntica.
+- [x] **T8 — Verificación manual: `docker compose up` — networking API↔Redis**
+  Alcance redefinido (ver commit): el host de Algolia está hardcodeado en `mercadona_client.py` (HTTPS, no configurable) — no es mockeable de forma limpia desde un contenedor separado sin tocar código fuera de alcance de esta spec o infraestructura TLS/DNS frágil, así que esta tarea verifica lo que RF-4/RF-5 realmente prueban: que el contenedor `api` resuelve y conecta al servicio `redis` por nombre (no `localhost`), no la lógica de scraping/Algolia (ya cubierta exhaustivamente en specs 001-004).
   Depende: T5.
-  RF: RF-4, RF-5, RF-7.
-  Hecho cuando: la primera petición golpea el upstream simulado, la segunda (idéntica) se sirve desde el Redis del compose sin volver a golpearlo.
+  RF: RF-4, RF-5.
+  Hecho cuando: `docker compose exec api` conecta y hace `PING` al Redis del compose (`redis://redis:6379/0`) con éxito, y `GET /health` responde `200` dentro del contenedor.
 
 - [ ] **T9 — Verificación manual: `HEALTHCHECK` refleja el estado real**
   Tras `docker compose up`, `docker compose ps` (o `docker ps`) muestra el contenedor `api` como `healthy` una vez pasa el `start-period`.

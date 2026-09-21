@@ -22,7 +22,7 @@ Nota (plan.md sección 5): la mayoría de estas tareas son de infraestructura, v
   RF: RF-2.
   Hecho cuando: `docker build --target builder .` completa sin error.
 
-- [ ] **T4 — `Dockerfile`: stage `runtime`**
+- [x] **T4 — `Dockerfile`: stage `runtime`**
   `FROM python:3.11-slim AS runtime`; copia los paquetes instalados del stage `builder` + `app/`; crea usuario `appuser` sin privilegios (Decisión D4), `chown` del `WORKDIR`, `USER appuser`; `HEALTHCHECK` vía `httpx` contra `/health` (Decisión D8); `CMD` con `uvicorn app.main:app --host 0.0.0.0 --port 8000`, sin `--reload` (Decisión D9).
   Depende: T1, T3.
   RF: RF-1, RF-3, RF-10.

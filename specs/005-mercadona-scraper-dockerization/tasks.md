@@ -64,7 +64,7 @@ Nota (plan.md sección 5): la mayoría de estas tareas son de infraestructura, v
   RF: RF-8.
   Hecho cuando: ninguno de esos directorios aparece dentro de la imagen.
 
-- [ ] **T11 — Lint, format y cobertura**
+- [x] **T11 — Lint, format y cobertura**
   `ruff check . && ruff format .` limpio (sólo se tocó `main.py` en código Python); `pytest --cov=app` ≥80% sobre el código nuevo/modificado (mismo criterio que T10/T12 de specs 001-004).
   Depende: T1–T10.
   RF: NFR de calidad (constitución #7, #8).

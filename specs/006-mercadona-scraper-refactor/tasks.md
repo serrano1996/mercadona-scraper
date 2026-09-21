@@ -20,7 +20,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-4.
   Hecho cuando: `pytest -q` completo en verde — `tests/core/test_security.py` no se modifica y sigue pasando tal cual (mismo comportamiento, sólo cambia de dónde viene `get_settings`).
 
-- [ ] **T4 — `api/v1/products.py`: reexporta providers de `dependencies.py`**
+- [x] **T4 — `api/v1/products.py`: reexporta providers de `dependencies.py`**
   Borra `get_settings`/`get_cache_repository`/`get_mercadona_client` locales; importa y reexpone los de `app.core.dependencies` bajo los mismos nombres (Decisión D5) — cualquier `from app.api.v1.products import get_settings, ...` sigue funcionando.
   Depende: T2.
   RF: RF-4, RF-5.

@@ -1,15 +1,23 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.core.config import Settings
+from app.core.dependencies import get_cache_repository, get_mercadona_client, get_settings
 from app.exceptions import UpstreamUnavailableError
 from app.models.product import ProductSearchResponse
 from app.models.query import ProductQuery
 from app.scrapers.mercadona_client import MercadonaClient
 from app.services.cache import CacheRepository
 from app.services.product_search import search_products
+
+__all__ = [
+    "get_cache_repository",
+    "get_mercadona_client",
+    "get_settings",
+    "router",
+]
 
 logger = logging.getLogger(__name__)
 
@@ -19,18 +27,6 @@ router = APIRouter()
 # (see Decision D8 in plan.md). Every request resolves to the same
 # warehouse for the MVP.
 _DEFAULT_WAREHOUSE = "mad1"
-
-
-def get_settings(request: Request) -> Settings:
-    return request.app.state.settings
-
-
-def get_cache_repository(request: Request) -> CacheRepository:
-    return request.app.state.cache_repository
-
-
-def get_mercadona_client(request: Request) -> MercadonaClient:
-    return request.app.state.mercadona_client
 
 
 SettingsDep = Annotated[Settings, Depends(get_settings)]

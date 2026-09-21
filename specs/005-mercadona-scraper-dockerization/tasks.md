@@ -34,7 +34,7 @@ Nota (plan.md sección 5): la mayoría de estas tareas son de infraestructura, v
   RF: RF-4, RF-5, RF-7.
   Hecho cuando: `docker compose config` valida el archivo sin error (sintaxis + interpolación de variables correctas).
 
-- [ ] **T6 — Verificación manual: imagen standalone responde**
+- [x] **T6 — Verificación manual: imagen standalone responde**
   `docker build -t mercadona-scraper .` + `docker run` con las env vars obligatorias (`MERCADONA_BASE_URL`, `REDIS_URL` apuntando a un Redis accesible) — confirma `GET /docs` y `GET /health` responden `200` desde el host.
   Depende: T4.
   RF: RF-1, RF-9.

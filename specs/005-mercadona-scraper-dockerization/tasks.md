@@ -28,7 +28,7 @@ Nota (plan.md sección 5): la mayoría de estas tareas son de infraestructura, v
   RF: RF-1, RF-3, RF-10.
   Hecho cuando: `docker build .` completa sin error; `docker run --rm <image> whoami` imprime `appuser`, no `root`.
 
-- [ ] **T5 — `docker-compose.yml`**
+- [x] **T5 — `docker-compose.yml`**
   Servicio `api` (`build: .`, `env_file: .env`, `environment: REDIS_URL=redis://redis:6379/0` — sobrescribe el `.env` local, Decisión D5 —, `ports: ["${API_PORT:-8000}:8000"]` — Decisión D7 —, `depends_on: redis`); servicio `redis` (`image: redis:7-alpine` — Decisión D6 —, sin puertos publicados al host salvo necesidad de debug).
   Depende: T2, T4.
   RF: RF-4, RF-5, RF-7.

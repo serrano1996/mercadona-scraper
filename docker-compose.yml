@@ -1,0 +1,27 @@
+# T5 — 005-mercadona-scraper-dockerization: levanta la API junto a un
+# Redis local (dev/pruebas). Producción puede seguir apuntando REDIS_URL
+# a un Redis externo sin usar el servicio `redis` de este archivo.
+
+services:
+  api:
+    build: .
+    env_file:
+      # required: false — .env puede no existir todavía justo tras un
+      # clone (sólo .env.example está en el repo); `docker compose
+      # config`/`build` no debe fallar por eso, sólo `up` necesitaría
+      # las variables reales para funcionar.
+      - path: .env
+        required: false
+    environment:
+      # Sobrescribe cualquier REDIS_URL=redis://localhost:6379/0 del
+      # .env local (uso no dockerizado) — dentro de la red del compose,
+      # "localhost" no resuelve al contenedor `redis` (plan.md Decisión
+      # D5).
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine

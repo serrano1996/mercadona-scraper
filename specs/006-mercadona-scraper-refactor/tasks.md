@@ -50,7 +50,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-5.
   Hecho cuando: `pytest -q` completo en verde; `git diff --stat` sobre `tests/` no muestra cambios fuera de los tests nuevos añadidos en T1-T7 (ningún test preexistente tocado).
 
-- [ ] **T9 — Lint, format y cobertura**
+- [x] **T9 — Lint, format y cobertura**
   `ruff check . && ruff format .` limpio; `pytest --cov=app` ≥80% sobre el código nuevo/modificado (mismo criterio que specs 001-005).
   Depende: T1–T8.
   RF: NFR de calidad (constitución #7, #8).

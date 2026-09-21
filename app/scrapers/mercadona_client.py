@@ -98,9 +98,25 @@ class MercadonaClient:
 
     async def search(self, term: str, warehouse: str) -> list[RawAlgoliaProduct]:
         app_id, api_key, index_prefix = await self._get_algolia_credentials()
-        index_name = f"{index_prefix}_{warehouse}_es"
+        response = await self._search_algolia(app_id, api_key, index_prefix, term, warehouse)
+        if response.status_code in (401, 403):
+            # Cached credentials rejected — Mercadona may have rotated the
+            # bundle without this process restarting (spec 006 RF-2).
+            # Invalidate and retry once with freshly-fetched credentials;
+            # if that also fails, raise_for_status() below raises exactly
+            # as it always has (RF-3: same final behavior on failure).
+            self._algolia_credentials = None
+            app_id, api_key, index_prefix = await self._get_algolia_credentials()
+            response = await self._search_algolia(app_id, api_key, index_prefix, term, warehouse)
+        response.raise_for_status()
+        hits = response.json()["results"][0]["hits"]
+        return [RawAlgoliaProduct.model_validate(hit) for hit in hits]
 
-        response = await self._request_with_retry(
+    async def _search_algolia(
+        self, app_id: str, api_key: str, index_prefix: str, term: str, warehouse: str
+    ) -> httpx.Response:
+        index_name = f"{index_prefix}_{warehouse}_es"
+        return await self._request_with_retry(
             "POST",
             f"https://{app_id}-dsn.algolia.net/1/indexes/*/queries",
             headers={
@@ -120,9 +136,6 @@ class MercadonaClient:
                 ]
             },
         )
-        response.raise_for_status()
-        hits = response.json()["results"][0]["hits"]
-        return [RawAlgoliaProduct.model_validate(hit) for hit in hits]
 
     async def _get_algolia_credentials(self) -> tuple[str, str, str]:
         if self._algolia_credentials is not None:

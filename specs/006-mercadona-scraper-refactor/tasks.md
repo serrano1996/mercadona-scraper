@@ -32,7 +32,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia. Cada tarea <30 min
   RF: RF-1.
   Hecho cuando: test — segunda llamada a `search()` sobre la misma instancia de `MercadonaClient` no repite las peticiones al manifest/bundle (respx: `call_count` de esas rutas se mantiene en 1 tras dos búsquedas); la suite existente de `tests/scrapers/test_mercadona_client*.py` sigue en verde.
 
-- [ ] **T6 — `mercadona_client.py`: invalidación reactiva ante 401/403 de Algolia**
+- [x] **T6 — `mercadona_client.py`: invalidación reactiva ante 401/403 de Algolia**
   Extrae `_search_algolia(...)` como método privado (Decisión D2); `search()` detecta `401`/`403` en la respuesta de Algolia, invalida `self._algolia_credentials`, reobtiene credenciales una vez y reintenta — si el reintento también falla, se comporta exactamente igual que hoy (RF-3: sin cambios en la excepción propagada).
   Depende: T5.
   RF: RF-2, RF-3.

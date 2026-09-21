@@ -119,6 +119,56 @@ async def test_second_search_reuses_cached_algolia_credentials(settings: Setting
     assert bundle_route.call_count == 1
 
 
+async def test_search_retries_once_with_fresh_credentials_after_401(
+    settings: Settings,
+) -> None:
+    """T6 — 006-mercadona-scraper-refactor: Algolia rejecting cached
+    credentials (401/403) invalidates the cache and retries once with
+    freshly-fetched credentials (spec.md RF-2)."""
+    with respx.mock(assert_all_called=True) as mock:
+        manifest_route = mock.get("https://tienda.mercadona.es/asset-manifest.json").mock(
+            return_value=httpx.Response(200, json=MANIFEST_PAYLOAD)
+        )
+        bundle_route = mock.get(BUNDLE_URL).mock(
+            return_value=httpx.Response(200, text=BUNDLE_JS_WITH_CREDENTIALS)
+        )
+        mock.post(f"https://{FAKE_APP_ID}-dsn.algolia.net/1/indexes/*/queries").mock(
+            side_effect=[
+                httpx.Response(401, json={"message": "Invalid Application-ID or API key"}),
+                httpx.Response(200, json=_algolia_response_with_one_hit()),
+            ]
+        )
+
+        async with httpx.AsyncClient() as http_client:
+            client = MercadonaClient(http_client, settings)
+            products = await client.search(term="leche", warehouse="mad1")
+
+    assert len(products) == 1
+    assert manifest_route.call_count == 2
+    assert bundle_route.call_count == 2
+
+
+async def test_search_still_raises_when_retry_also_gets_401(settings: Settings) -> None:
+    """T6 — same final behavior as before this refactor when even the
+    fresh credentials are rejected: the HTTPStatusError still propagates
+    (spec.md RF-3, no observable behavior change on ultimate failure)."""
+    with respx.mock(assert_all_called=True) as mock:
+        mock.get("https://tienda.mercadona.es/asset-manifest.json").mock(
+            return_value=httpx.Response(200, json=MANIFEST_PAYLOAD)
+        )
+        mock.get(BUNDLE_URL).mock(return_value=httpx.Response(200, text=BUNDLE_JS_WITH_CREDENTIALS))
+        mock.post(f"https://{FAKE_APP_ID}-dsn.algolia.net/1/indexes/*/queries").mock(
+            return_value=httpx.Response(401, json={"message": "Invalid Application-ID or API key"})
+        )
+
+        async with httpx.AsyncClient() as http_client:
+            client = MercadonaClient(http_client, settings)
+            with pytest.raises(httpx.HTTPStatusError) as exc_info:
+                await client.search(term="leche", warehouse="mad1")
+
+    assert exc_info.value.response.status_code == 401
+
+
 async def test_search_raises_when_credentials_not_found(settings: Settings) -> None:
     with respx.mock(assert_all_called=True) as mock:
         mock.get("https://tienda.mercadona.es/asset-manifest.json").mock(

@@ -86,7 +86,7 @@ Rama `007-warehouse-resolution-pr3`, base `007-warehouse-resolution-pr2`. Único
   RF: RF-1, RF-5, RF-8, RF-9, RF-10.
   Hecho cuando: los tests nuevos están en verde y `pytest -q` completo sigue en verde.
 
-- [ ] **T10 — `services/product_search.py`: clave de cache por almacén**
+- [x] **T10 — `services/product_search.py`: clave de cache por almacén**
   `cache_key = f"search:{warehouse}:{query.term}"` (antes `search:{postal_code}:{term}`, D8 de plan.md); en un hit de cache, reescribe `SearchMeta.postal_code` con el código postal de la petición actual: `cached.model_copy(update={"search": cached.search.model_copy(update={"postal_code": query.postal_code})})`, para no violar RF-7 cuando dos códigos postales comparten almacén.
   RED: `tests/services/test_product_search.py` — actualiza `cache.get.assert_awaited_once_with("search:28001:leche")` → `"search:mad1:leche"`; test nuevo: hit de cache escrito por `28001` y leído por `28002` (mismo almacén) ⇒ la respuesta lleva `search.postal_code == "28002"` y `search.warehouse == "mad3"`.
   GREEN: aplica el cambio de clave y la reescritura en el hit.

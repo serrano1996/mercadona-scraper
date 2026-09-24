@@ -1,6 +1,12 @@
 """T11/T12 — product_search.search_products: cache-hit returns the cached
 response directly without touching MercadonaClient; cache-miss fetches,
-maps, caches, and returns the fresh result (RF-1, RF-4)."""
+maps, caches, and returns the fresh result (RF-1, RF-4).
+
+T10 — 007-mercadona-scraper-warehouse-resolution: the cache key is keyed
+by warehouse, not postal_code (RF-6, Decision D8 in plan.md), so a cache
+hit rewrites SearchMeta.postal_code to the current request's postal_code
+instead of leaking a different postal_code that happens to share the same
+warehouse (RF-7)."""
 
 import json
 from datetime import UTC, datetime
@@ -67,8 +73,30 @@ async def test_returns_cached_response_without_calling_client() -> None:
     )
 
     assert result == cached_response
-    cache.get.assert_awaited_once_with("search:28001:leche")
+    cache.get.assert_awaited_once_with("search:mad1:leche")
     client.search.assert_not_called()
+
+
+async def test_shared_warehouse_cache_hit_rewrites_postal_code_to_current_request() -> None:
+    """RF-7: two postal codes resolving to the same warehouse share the
+    product cache entry (RF-6), but the response must always reflect the
+    postal_code of the CURRENT request, not whichever one wrote the cache
+    first."""
+    cached_response = _sample_response()
+    assert cached_response.search.postal_code == "28001"
+    cache = AsyncMock(spec=CacheRepository)
+    cache.get.return_value = cached_response
+    client = AsyncMock(spec=MercadonaClient)
+    query = ProductQuery(postal_code="28002", term="leche")
+
+    result = await search_products(
+        query, warehouse="mad1", cache=cache, client=client, settings=_settings()
+    )
+
+    assert result.search.postal_code == "28002"
+    assert result.search.warehouse == "mad1"
+    assert result.products == cached_response.products
+    cache.get.assert_awaited_once_with("search:mad1:leche")
 
 
 async def test_cache_miss_fetches_maps_and_caches_result() -> None:
@@ -91,4 +119,4 @@ async def test_cache_miss_fetches_maps_and_caches_result() -> None:
     assert result.products[0].id == "10381"
     assert result.products[0].name == "Leche semidesnatada Hacendado"
 
-    cache.set.assert_awaited_once_with("search:28001:leche", result, ttl=3600)
+    cache.set.assert_awaited_once_with("search:mad1:leche", result, ttl=3600)

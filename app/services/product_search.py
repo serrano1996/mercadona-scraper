@@ -20,10 +20,19 @@ async def search_products(
     client: MercadonaClient,
     settings: Settings,
 ) -> ProductSearchResponse:
-    cache_key = f"search:{query.postal_code}:{query.term}"
+    # Keyed by warehouse, not postal_code (spec 007 RF-6, Decision D8 in
+    # plan.md): two postal codes resolving to the same warehouse must
+    # share this cache entry, and two resolving to different warehouses
+    # must never collide.
+    cache_key = f"search:{warehouse}:{query.term}"
     cached = await cache.get(cache_key)
     if cached is not None:
-        return cached
+        # RF-7: the cache entry may have been written by a different
+        # postal_code that shares this warehouse — the response must
+        # always reflect the postal_code of THIS request.
+        return cached.model_copy(
+            update={"search": cached.search.model_copy(update={"postal_code": query.postal_code})}
+        )
 
     try:
         raw_products = await client.search(term=query.term, warehouse=warehouse)

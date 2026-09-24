@@ -87,6 +87,12 @@ class AlgoliaCredentialsUnavailable(Exception):
     extracted from Mercadona's legacy bundle (see Decision D7 in plan.md)."""
 
 
+class WarehouseHeaderMissing(Exception):
+    """Raised when Mercadona's change-pc endpoint responds 2xx without the
+    x-customer-wh header, signalling a break in its API contract (spec 007
+    RF-10, Decision D4 in plan.md)."""
+
+
 class MercadonaClient:
     def __init__(self, http_client: httpx.AsyncClient, settings: Settings) -> None:
         self._http_client = http_client

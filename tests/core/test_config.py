@@ -90,3 +90,24 @@ def test_api_keys_ignores_empty_entries(
     settings = Settings()
 
     assert settings.api_keys == frozenset()
+
+
+def test_warehouse_ttl_defaults(required_env: None) -> None:
+    """T1 — 007-mercadona-scraper-warehouse-resolution: default TTLs for
+    the postal_code -> warehouse cache (spec.md RF-3, RF-11)."""
+    settings = Settings()
+
+    assert settings.WAREHOUSE_CACHE_TTL_SECONDS == 86400
+    assert settings.WAREHOUSE_NEGATIVE_CACHE_TTL_SECONDS == 3600
+
+
+def test_warehouse_ttl_env_overrides_defaults(
+    required_env: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("WAREHOUSE_CACHE_TTL_SECONDS", "120")
+    monkeypatch.setenv("WAREHOUSE_NEGATIVE_CACHE_TTL_SECONDS", "30")
+
+    settings = Settings()
+
+    assert settings.WAREHOUSE_CACHE_TTL_SECONDS == 120
+    assert settings.WAREHOUSE_NEGATIVE_CACHE_TTL_SECONDS == 30

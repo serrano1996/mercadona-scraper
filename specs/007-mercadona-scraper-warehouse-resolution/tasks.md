@@ -42,7 +42,7 @@ Rama `007-warehouse-resolution-pr1`, base `main`. Aditivo puro: nada consume aú
 
 Rama `007-warehouse-resolution-pr2`, base `007-warehouse-resolution-pr1`. Aditivo puro: sigue sin haber ningún consumidor en la ruta, la suite existente permanece intacta. Estimación: **≈330 líneas** (plan.md §7, pasos 4-5 de §5).
 
-- [ ] **T5 — `cache.py`: `CachedWarehouse` + `WarehouseCacheRepository`**
+- [x] **T5 — `cache.py`: `CachedWarehouse` + `WarehouseCacheRepository`**
   `CachedWarehouse` (dataclass `frozen`, `warehouse: str | None`). `WarehouseCacheRepository` con `get(postal_code) -> CachedWarehouse | None` (un único `MGET` sobre `postal-code-wh:{postal_code}` y `postal-code-wh-unserved:{postal_code}`; gana la positiva si coexisten), `set_served(postal_code, warehouse, ttl)` y `set_not_served(postal_code, ttl)` (D3 de plan.md). Degradación ante `RedisError`: `get`/`set_served`/`set_not_served` capturan el error, loguean `WARNING` (sin cabeceras ni valores de Redis) y se comportan como miss/no-op, igual que `CacheRepository` (D6).
   RED: `tests/services/test_warehouse_cache.py` (nuevo, fakeredis) — `set_served("28001", "mad3", ttl=86400)` ⇒ `get("28001") == CachedWarehouse("mad3")`, clave `postal-code-wh:28001` con `TTL` ≈ 86400; `set_not_served("99999", ttl=3600)` ⇒ `get("99999") == CachedWarehouse(None)`, clave `postal-code-wh-unserved:99999` con `TTL` ≈ 3600 y la clave positiva ausente; miss ⇒ `None`; coexistencia de ambas claves ⇒ gana la positiva; Redis caído (`AsyncMock` con `side_effect=RedisConnectionError` en `mget`/`set`) ⇒ `get` devuelve `None`, las escrituras no lanzan y hay una línea `WARNING` en `caplog`.
   GREEN: implementa `CachedWarehouse` y `WarehouseCacheRepository` en `app/services/cache.py`, junto a `CacheRepository`.

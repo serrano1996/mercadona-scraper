@@ -55,7 +55,7 @@ Cobertura por RF:
 ```python
 @dataclass(frozen=True)
 class CachedWarehouse:
-    warehouse: str | None   # None = código postal cacheado como "sin servicio" (RF-11)
+    warehouse: str | None  # None = código postal cacheado como "sin servicio" (RF-11)
 ```
 
 **Claves Redis nuevas** (D3):

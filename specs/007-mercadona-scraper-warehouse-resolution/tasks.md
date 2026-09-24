@@ -109,13 +109,13 @@ Rama `007-warehouse-resolution-pr3`, base `007-warehouse-resolution-pr2`. Único
   RF: RF-4, RF-6, RF-7, RF-8, RF-10, RF-11; H1, H4.
   Hecho cuando: todos los casos anteriores están en verde en un único archivo de test y `pytest -q` completo sigue en verde.
 
-- [ ] **T13 — Docs vivas: `README.md` y `.env.example`**
+- [x] **T13 — Docs vivas: `README.md` y `.env.example`**
   `README.md`: añade `WAREHOUSE_CACHE_TTL_SECONDS`/`WAREHOUSE_NEGATIVE_CACHE_TTL_SECONDS` a la tabla de variables, borra la limitación "Resolución de almacén provisional" (cierra D8 de plan.md 001) y actualiza el ejemplo de respuesta con un almacén real (p.ej. `mad3`). `.env.example`: añade las dos variables nuevas con sus valores por defecto.
   Depende: T12.
   RF: constitución #9/#10 (docs vivas).
   Hecho cuando: `README.md` no menciona ya `mad1` como almacén fijo, y `.env.example` contiene las dos variables nuevas con `86400`/`3600`.
 
-- [ ] **T14 — Lint, format y cobertura**
+- [x] **T14 — Lint, format y cobertura**
   `ruff check . && ruff format .` limpio; `pytest --cov=app` ≥80% sobre el código nuevo/modificado (mismo criterio que specs 001-006, criterio de finalización de spec.md).
   Depende: T1–T13.
   RF: criterio de finalización de spec.md; constitución #7, #8.

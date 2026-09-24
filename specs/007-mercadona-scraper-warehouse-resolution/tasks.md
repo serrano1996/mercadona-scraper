@@ -121,7 +121,7 @@ Rama `007-warehouse-resolution-pr3`, base `007-warehouse-resolution-pr2`. Único
   RF: criterio de finalización de spec.md; constitución #7, #8.
   Hecho cuando: ambos comandos terminan sin error y el reporte de cobertura no baja del 80% sobre el código nuevo/modificado.
 
-- [ ] **T15 — Verificación final**
+- [x] **T15 — Verificación final**
   Con la suite completa mockeada (fakeredis + respx, **nunca contra la API real de Mercadona**): `pytest -q` completo en verde (specs 001-007); levantar la app y confirmar que `/docs` muestra el `pattern` de `postal_code` en el schema del parámetro y la respuesta `404` documentada en `responses=`. Verificación manual de spec.md, con `change-pc` mockeado: `28001`→`mad3` y `46001`→`vlc1` devuelven `SearchMeta.warehouse` distinto y catálogo/precio distinto; `postal_code="1234"` ⇒ `422`; repetir la misma petición dentro de `WAREHOUSE_CACHE_TTL_SECONDS` no repite la llamada `change-pc` (verificado por `call_count` sobre el mock).
   Depende: T14.
   RF: criterio de finalización de spec.md (manual + suite completa + cobertura + lint).

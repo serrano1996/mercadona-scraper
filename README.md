@@ -89,6 +89,8 @@ Configuradas vía `.env` (ver `.env.example`) o variables de entorno reales — 
 | `REDIS_URL`             |     Sí      | —        | URL de conexión a Redis (ej. `redis://localhost:6379/0`)                     |
 | `API_KEYS`              |     No      | `""`     | Tokens válidos separados por coma para `X-API-Key`; vacío = nadie autentica  |
 | `CACHE_TTL_SECONDS`     |     No      | `3600`   | TTL de las entradas de cache de búsqueda                                     |
+| `WAREHOUSE_CACHE_TTL_SECONDS` | No    | `86400`  | TTL de la resolución `postal_code → almacén` en cache                        |
+| `WAREHOUSE_NEGATIVE_CACHE_TTL_SECONDS` | No | `3600` | TTL de un `postal_code` cacheado como "sin servicio" (404 de Mercadona)      |
 | `RETRY_MAX_ATTEMPTS`    |     No      | `3`      | Intentos máximos por petición saliente a Mercadona/Algolia                   |
 | `RETRY_BASE_DELAY`      |     No      | `0.5`    | Delay base (segundos) del backoff exponencial entre reintentos               |
 | `RETRY_JITTER_MAX_S`    |     No      | `0.3`    | Jitter aleatorio máximo (segundos) añadido a cada delay de reintento         |
@@ -100,17 +102,19 @@ Todos los endpoints bajo `/api/v1/` requieren la cabecera `X-API-Key` con uno de
 
 ```bash
 curl -H "X-API-Key: <tu-token>" \
-  "http://localhost:8000/api/v1/products?postal_code=28001&term=leche"
+  "http://localhost:8000/api/v1/products?postal_code=46001&term=leche"
 ```
+
+`postal_code` se resuelve a su almacén Mercadona real (`change-pc` de Mercadona, cacheado — ver `specs/007-mercadona-scraper-warehouse-resolution/`), no a un valor fijo: precios y catálogo varían según el almacén.
 
 Respuesta (`200`):
 
 ```json
 {
   "search": {
-    "postal_code": "28001",
+    "postal_code": "46001",
     "term": "leche",
-    "warehouse": "mad1",
+    "warehouse": "vlc1",
     "strategy_used": "algolia",
     "scraped_at": "2026-09-21T10:00:00Z",
     "total_results": 1
@@ -128,7 +132,7 @@ Respuesta (`200`):
 }
 ```
 
-Sin `X-API-Key` (o con una inválida) → `401`. Si Mercadona/Algolia no responde tras agotar los reintentos → `502`.
+Sin `X-API-Key` (o con una inválida) → `401`. `postal_code` con formato inválido (≠ 5 dígitos) → `422`. `postal_code` fuera de la zona de servicio de Mercadona → `404`. Si Mercadona/Algolia no responde tras agotar los reintentos → `502`.
 
 ## Docker
 
@@ -179,9 +183,9 @@ Specs completas:
 | `004-mercadona-scraper-authentication` | Autenticación por `X-API-Key` |
 | `005-mercadona-scraper-dockerization` | Dockerfile, docker-compose, endpoint `/health` |
 | `006-mercadona-scraper-refactor` | Cache de credenciales Algolia, providers de DI centralizados, tipado de `app.state` |
+| `007-mercadona-scraper-warehouse-resolution` | Resolución real `postal_code → almacén` vía Mercadona, cache Redis con TTL propio, clave de cache de productos por almacén |
 
 ## Limitaciones conocidas
 
-- **Resolución de almacén provisional:** todo `postal_code` resuelve al mismo almacén (`mad1`) — la resolución real código postal → almacén no está implementada (ver Decisión D8, `specs/001-mercadona-scraper-mvp/plan.md`).
 - **Sin rotación de IP/proxy:** decisión explícita, fuera de alcance del proyecto (ver `specs/002-mercadona-scraper-antibaneo/spec.md`).
 - **Cache de credenciales en memoria de proceso:** no se comparte entre réplicas si el servicio se despliega con más de una instancia; cada una vuelve a extraerlas tras un reinicio.

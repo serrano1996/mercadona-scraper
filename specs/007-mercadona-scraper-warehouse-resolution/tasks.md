@@ -70,7 +70,7 @@ Rama `007-warehouse-resolution-pr3`, base `007-warehouse-resolution-pr2`. Único
   RF: RF-1.
   Hecho cuando: los tests nuevos están en verde y `pytest -q` completo sigue en verde.
 
-- [ ] **T8 — `core/state.py` + `core/dependencies.py` + `main.py`: cableado de `WarehouseCacheRepository`**
+- [x] **T8 — `core/state.py` + `core/dependencies.py` + `main.py`: cableado de `WarehouseCacheRepository`**
   `AppState` gana `warehouse_cache_repository: WarehouseCacheRepository`; `dependencies.py` añade `get_warehouse_cache_repository(request)` (mismo patrón que `get_cache_repository`, D2 de plan.md); `main.py` en el `lifespan` crea `WarehouseCacheRepository(redis_client)` sobre el mismo `redis_client` que `CacheRepository` y lo asigna a `app.state.warehouse_cache_repository`.
   RED: `tests/core/test_dependencies.py` — `_make_request` gana el campo `warehouse_cache_repository`, test nuevo para `get_warehouse_cache_repository` (mismo criterio `is` que el resto de providers); `tests/test_main.py::test_lifespan_populates_app_state` — afirma `app.state.warehouse_cache_repository`.
   GREEN: implementa los tres cambios.

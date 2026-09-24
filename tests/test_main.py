@@ -48,6 +48,15 @@ def test_lifespan_populates_app_state() -> None:
         assert app.state.settings.MERCADONA_BASE_URL == "https://tienda.mercadona.es"
         assert app.state.cache_repository is not None
         assert app.state.mercadona_client is not None
+        assert app.state.warehouse_cache_repository is not None
+
+
+def test_lifespan_wires_warehouse_cache_repository_on_the_same_redis_client() -> None:
+    """T8 — 007-mercadona-scraper-warehouse-resolution, Decision D2 in
+    plan.md: WarehouseCacheRepository shares the same Redis connection as
+    CacheRepository, no separate connection pool."""
+    with TestClient(app):
+        assert app.state.warehouse_cache_repository._redis is app.state.cache_repository._redis
 
 
 def test_mercadona_client_uses_a_pooled_user_agent() -> None:

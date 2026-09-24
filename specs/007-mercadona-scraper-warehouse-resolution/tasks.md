@@ -6,7 +6,7 @@ Desglose de [plan.md](plan.md). Orden = orden de dependencia (§5 de plan.md). C
 
 Rama `007-warehouse-resolution-pr1`, base `main`. Aditivo puro: nada consume aún el código nuevo, la suite existente sigue en verde sin tocar ningún test preexistente. Estimación: **≈260 líneas** (plan.md §7, pasos 1-3 de §5).
 
-- [ ] **T1 — `core/config.py`: nuevas TTL de almacén**
+- [x] **T1 — `core/config.py`: nuevas TTL de almacén**
   `WAREHOUSE_CACHE_TTL_SECONDS: int = 86400` y `WAREHOUSE_NEGATIVE_CACHE_TTL_SECONDS: int = 3600` en `Settings`, mismo patrón que `CACHE_TTL_SECONDS`.
   RED: `tests/core/test_config.py` — `Settings().WAREHOUSE_CACHE_TTL_SECONDS == 86400` y `Settings().WAREHOUSE_NEGATIVE_CACHE_TTL_SECONDS == 3600` por defecto; override vía variable de entorno para ambas.
   GREEN: añade los dos campos a `Settings`.
@@ -14,7 +14,7 @@ Rama `007-warehouse-resolution-pr1`, base `main`. Aditivo puro: nada consume aú
   RF: RF-3, RF-11.
   Hecho cuando: los tests nuevos están en verde, `pytest -q` completo sigue en verde y no se ha tocado ningún test existente.
 
-- [ ] **T2 — `app/exceptions.py` y `mercadona_client.py`: excepciones de dominio nuevas**
+- [x] **T2 — `app/exceptions.py` y `mercadona_client.py`: excepciones de dominio nuevas**
   `PostalCodeNotServedError(Exception)` en `app/exceptions.py` (hermana de `UpstreamUnavailableError`, sin tipos de httpx). `WarehouseHeaderMissing(Exception)` en `app/scrapers/mercadona_client.py` (hermana de `AlgoliaCredentialsUnavailable`, D4 de plan.md).
   RED: test unitario mínimo — ambas excepciones son instanciables, heredan de `Exception` y no llevan atributos obligatorios.
   GREEN: define las dos clases, sin lógica adicional.
@@ -22,7 +22,7 @@ Rama `007-warehouse-resolution-pr1`, base `main`. Aditivo puro: nada consume aú
   RF: soporte de RF-8, RF-9, RF-10 (D4).
   Hecho cuando: los tests están en verde y `pytest -q` completo sigue en verde.
 
-- [ ] **T3 — `MercadonaClient.resolve_warehouse`: camino feliz**
+- [x] **T3 — `MercadonaClient.resolve_warehouse`: camino feliz**
   Nuevo método `async def resolve_warehouse(self, postal_code: str) -> str | None`, capa `scrapers/` (D1 de plan.md): `PUT {MERCADONA_BASE_URL}/api/postal-codes/actions/change-pc/` con `json={"new_postal_code": postal_code}` a través de `_request_with_retry` (reutiliza la política anti-baneo de spec 002, sin lógica de reintento paralela); en `2xx` con cabecera `x-customer-wh` devuelve su valor tal cual, sin asumir formato (ids opacos como `4701`, `3842`).
   RED: `tests/scrapers/test_mercadona_client_warehouse.py` (nuevo, respx) — `200` con `x-customer-wh: mad3` ⇒ devuelve `"mad3"`; se afirma método `PUT` y cuerpo JSON exacto `{"new_postal_code": "28001"}` (`route.calls.last.request`); ids opacos de 4 caracteres (`4701`, `3842`) se devuelven sin transformación.
   GREEN: implementa `resolve_warehouse` en `mercadona_client.py`.
@@ -30,7 +30,7 @@ Rama `007-warehouse-resolution-pr1`, base `main`. Aditivo puro: nada consume aú
   RF: RF-2.
   Hecho cuando: los tests nuevos están en verde y `pytest -q` completo sigue en verde.
 
-- [ ] **T4 — `MercadonaClient.resolve_warehouse`: errores y regresión de no-reintento en `404`**
+- [x] **T4 — `MercadonaClient.resolve_warehouse`: errores y regresión de no-reintento en `404`**
   Extiende `resolve_warehouse`: `404` ⇒ devuelve `None` (RF-9); `2xx` sin `x-customer-wh` ⇒ `raise WarehouseHeaderMissing` + `logger.warning(...)` sin loguear cabeceras completas ni el cuerpo (RF-10, RF-12); `5xx`/`429`/transporte ⇒ se reintenta vía `_request_with_retry` igual que hoy (RF-8), sin tocar `_error_for_response` ni `_request_with_retry` (D5 de plan.md: el `404` ya no se reintenta porque `_error_for_response` devuelve `None` para cualquier `4xx` distinto de `429` en el primer intento).
   RED (en `tests/scrapers/test_mercadona_client_warehouse.py`): `404` con `{"error_msg": "This zip code is outside of our working area"}` ⇒ devuelve `None`, **`route.call_count == 1`** y `asyncio.sleep` nunca invocado (espía con `monkeypatch`, mismo patrón que `test_mercadona_client_retry.py`) — **regresión explícita de D5, sin reintento en `404`**; `503, 503, 200+cabecera` ⇒ recupera en el tercer intento (`call_count == 3`); `503` persistente ⇒ lanza `HTTPStatusError` tras `RETRY_MAX_ATTEMPTS`; `429` + `Retry-After: 0` ⇒ recupera; `200` sin `x-customer-wh` ⇒ `WarehouseHeaderMissing` + una línea `WARNING` en `caplog` sin `Set-Cookie` ni otras cabeceras; `403` (y `400`) ⇒ se propaga como error de estado HTTP con **`route.call_count == 1`** y `asyncio.sleep` nunca invocado — regresión de no-reintento de RF-13 (el mapeo a `502` se prueba en T6).
   GREEN: código mínimo para que todos los casos anteriores pasen (probablemente ya cubierto por T3 + el comportamiento existente de `_request_with_retry`; esta tarea confirma y fija el contrato con tests).

@@ -104,16 +104,36 @@ class MercadonaClient:
 
     async def resolve_warehouse(self, postal_code: str) -> str | None:
         """Resolves the Mercadona warehouse ("wh") a postal_code belongs to,
-        via change-pc (spec 007 RF-2, Decision D1 in plan.md). The
-        warehouse id is opaque — no format is assumed (real examples:
-        `mad3`, `vlc1`, `4701`, `3842`). Only the happy path is implemented
-        here; error handling (404, missing header) is added in T4."""
+        via change-pc (Decision D1 in plan.md). The warehouse id is opaque
+        — no format is assumed (real examples: `mad3`, `vlc1`, `4701`,
+        `3842`). `_request_with_retry` already retries 5xx/429/transport
+        and returns any other 4xx untouched on the first attempt (RF-8;
+        Decision D5: no separate retry policy for 404/RF-9 or other 4xx
+        like 403/RF-13).
+
+        Returns None on 404 (postal code outside Mercadona's service area,
+        RF-9) — the caller decides whether/how long to cache that. Raises
+        `WarehouseHeaderMissing` on a 2xx without `x-customer-wh` (RF-10,
+        not observed live, treated as a broken upstream contract, not as
+        "not served"). Any other 4xx propagates via `raise_for_status()`
+        (RF-13)."""
         response = await self._request_with_retry(
             "PUT",
             f"{self._settings.MERCADONA_BASE_URL}/api/postal-codes/actions/change-pc/",
             json={"new_postal_code": postal_code},
         )
-        return response.headers.get("x-customer-wh")
+        if response.status_code == 404:
+            return None
+        response.raise_for_status()
+        warehouse = response.headers.get("x-customer-wh")
+        if warehouse is None:
+            logger.warning(
+                "change-pc returned 2xx without x-customer-wh for postal_code=%s", postal_code
+            )
+            raise WarehouseHeaderMissing(
+                "Mercadona's change-pc responded 2xx without x-customer-wh"
+            )
+        return warehouse
 
     async def search(self, term: str, warehouse: str) -> list[RawAlgoliaProduct]:
         app_id, api_key, index_prefix = await self._get_algolia_credentials()

@@ -62,7 +62,7 @@ Rama `007-warehouse-resolution-pr2`, base `007-warehouse-resolution-pr1`. Aditiv
 
 Rama `007-warehouse-resolution-pr3`, base `007-warehouse-resolution-pr2`. Único PR que cambia comportamiento observable — no puede partirse más sin dejar la suite en rojo entre commits (plan.md §7). Estimación: **≈330 líneas** (plan.md §7, pasos 6-9 de §5).
 
-- [ ] **T7 — `models/query.py`: validación de 5 dígitos**
+- [x] **T7 — `models/query.py`: validación de 5 dígitos**
   `ProductQuery.postal_code: str = Field(pattern=r"^[0-9]{5}$")` (D7 de plan.md — `[0-9]` y no `\d`, porque `\d` en el motor Rust de Pydantic v2 acepta dígitos Unicode no ASCII).
   RED: `tests/models/test_query.py` — acepta `"28001"`, `"01001"` (cero inicial conservado) y `"51001"`; rechaza (`ValidationError`) `"1234"`, `"123456"`, `"abcde"`, `"2800a"`, `" 28001"`, `""` y `"٢٨٠٠١"` (dígitos arábigo-índicos).
   GREEN: añade el `pattern` al campo.

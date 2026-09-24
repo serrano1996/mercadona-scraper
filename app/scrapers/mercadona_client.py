@@ -102,6 +102,19 @@ class MercadonaClient:
         # 2 extra HTTP round trips (manifest + bundle) on every call.
         self._algolia_credentials: tuple[str, str, str] | None = None
 
+    async def resolve_warehouse(self, postal_code: str) -> str | None:
+        """Resolves the Mercadona warehouse ("wh") a postal_code belongs to,
+        via change-pc (spec 007 RF-2, Decision D1 in plan.md). The
+        warehouse id is opaque — no format is assumed (real examples:
+        `mad3`, `vlc1`, `4701`, `3842`). Only the happy path is implemented
+        here; error handling (404, missing header) is added in T4."""
+        response = await self._request_with_retry(
+            "PUT",
+            f"{self._settings.MERCADONA_BASE_URL}/api/postal-codes/actions/change-pc/",
+            json={"new_postal_code": postal_code},
+        )
+        return response.headers.get("x-customer-wh")
+
     async def search(self, term: str, warehouse: str) -> list[RawAlgoliaProduct]:
         app_id, api_key, index_prefix = await self._get_algolia_credentials()
         response = await self._search_algolia(app_id, api_key, index_prefix, term, warehouse)

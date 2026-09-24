@@ -101,7 +101,7 @@ Rama `007-warehouse-resolution-pr3`, base `007-warehouse-resolution-pr2`. Único
   RF: regresión — mantiene en verde specs 001-006 tras activar RF-2, RF-5, RF-6.
   Hecho cuando: `pytest -q` completo está en verde, incluidas todas las suites de specs 001-006 sin xfail ni skip nuevos.
 
-- [ ] **T12 — Integración nueva: `tests/integration/test_warehouse_resolution.py`**
+- [x] **T12 — Integración nueva: `tests/integration/test_warehouse_resolution.py`**
   App real + `lifespan` + fakeredis + respx, cero llamadas reales a Mercadona.
   RED: `28001`→`mad3` y `46001`→`vlc1` (dos rutas `change-pc` distinguidas por el cuerpo JSON o `side_effect` por request) ⇒ `SearchMeta.warehouse` distinto, y Algolia recibe `indexName` `products_prod_mad3_es`/`products_prod_vlc1_es` (H1, RF-5, RF-6); dos códigos postales que resuelven al mismo almacén con el mismo `term` ⇒ Algolia `call_count == 1` (H4) y cada respuesta lleva su propio `postal_code` (RF-7); misma petición dos veces ⇒ `change-pc` `call_count == 1` (RF-4); `99999` → `404` dos veces ⇒ ambas respuestas `404` y `change-pc` `call_count == 1` (RF-11); `change-pc` `503` persistente ⇒ `502` (RF-8); `200` sin cabecera ⇒ `502`, y una segunda petición vuelve a llamar a `change-pc` porque no quedó nada cacheado (RF-10); Redis caído (fixture `client_with_broken_redis` de `test_rf_edge_redis_down.py`) ⇒ `200` y `change-pc` llamado en cada petición.
   GREEN: si algún caso falla, ajusta el cableado de T8-T10 (no debería hacer falta código nuevo si T1-T11 están completas).

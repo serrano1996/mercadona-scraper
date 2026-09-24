@@ -13,7 +13,7 @@ from fastapi import Request
 from app.core.config import Settings
 from app.core.state import AppState
 from app.scrapers.mercadona_client import MercadonaClient
-from app.services.cache import CacheRepository
+from app.services.cache import CacheRepository, WarehouseCacheRepository
 
 
 def _state(request: Request) -> AppState:
@@ -30,3 +30,7 @@ def get_cache_repository(request: Request) -> CacheRepository:
 
 def get_mercadona_client(request: Request) -> MercadonaClient:
     return _state(request).mercadona_client
+
+
+def get_warehouse_cache_repository(request: Request) -> WarehouseCacheRepository:
+    return _state(request).warehouse_cache_repository

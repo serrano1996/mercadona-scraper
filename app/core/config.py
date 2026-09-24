@@ -15,6 +15,13 @@ class Settings(BaseSettings):
     # Comma-separated valid API tokens for GET /api/v1/* (spec 004 RF-5).
     # Empty by default: no token configured means no token is valid.
     API_KEYS: str = ""
+    # Cache TTLs for postal_code -> warehouse resolution (spec 007 RF-3,
+    # RF-11). Longer than CACHE_TTL_SECONDS: warehouse assignment changes
+    # far less often than product catalog/prices. The negative TTL (postal
+    # codes with no Mercadona service) is shorter so a new service area is
+    # picked up sooner.
+    WAREHOUSE_CACHE_TTL_SECONDS: int = 86400
+    WAREHOUSE_NEGATIVE_CACHE_TTL_SECONDS: int = 3600
 
     @computed_field  # type: ignore[prop-decorator]
     @property

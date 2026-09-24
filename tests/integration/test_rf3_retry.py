@@ -10,6 +10,8 @@ import pytest
 import respx
 from httpx import AsyncClient
 
+from tests.integration.conftest import mock_change_pc
+
 FIXTURE_PATH = Path(__file__).parent.parent / "fixtures" / "mercadona_algolia_hit_sample.json"
 
 MANIFEST_URL = "https://tienda.mercadona.es/asset-manifest.json"
@@ -35,6 +37,7 @@ def fast_retry(monkeypatch: pytest.MonkeyPatch) -> None:
 async def test_persistent_5xx_returns_502_after_exhausting_retries(
     client: AsyncClient, respx_mock: respx.MockRouter
 ) -> None:
+    mock_change_pc(respx_mock)
     manifest_route = respx_mock.get(MANIFEST_URL).mock(
         side_effect=[httpx.Response(503), httpx.Response(503), httpx.Response(503)]
     )
@@ -50,6 +53,7 @@ async def test_persistent_5xx_returns_502_after_exhausting_retries(
 async def test_recovers_on_third_attempt_returns_200(
     client: AsyncClient, respx_mock: respx.MockRouter
 ) -> None:
+    mock_change_pc(respx_mock)
     manifest_route = respx_mock.get(MANIFEST_URL).mock(
         side_effect=[
             httpx.Response(503),

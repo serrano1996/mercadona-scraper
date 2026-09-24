@@ -13,7 +13,7 @@ from app.core.security import verify_api_key
 from app.middleware.request_logging import RequestLoggingMiddleware
 from app.scrapers.http_client_factory import build_mercadona_http_client
 from app.scrapers.mercadona_client import MercadonaClient
-from app.services.cache import CacheRepository
+from app.services.cache import CacheRepository, WarehouseCacheRepository
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +28,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.settings = settings
     app.state.cache_repository = CacheRepository(redis_client)
     app.state.mercadona_client = MercadonaClient(http_client, settings)
+    app.state.warehouse_cache_repository = WarehouseCacheRepository(redis_client)
 
     yield
 

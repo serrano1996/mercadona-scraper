@@ -8,7 +8,7 @@ from dataclasses import dataclass
 
 from app.core.config import Settings
 from app.scrapers.mercadona_client import MercadonaClient
-from app.services.cache import CacheRepository
+from app.services.cache import CacheRepository, WarehouseCacheRepository
 
 
 @dataclass
@@ -16,3 +16,4 @@ class AppState:
     settings: Settings
     cache_repository: CacheRepository
     mercadona_client: MercadonaClient
+    warehouse_cache_repository: WarehouseCacheRepository

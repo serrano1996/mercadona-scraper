@@ -10,6 +10,8 @@ import httpx
 import respx
 from httpx import AsyncClient
 
+from tests.integration.conftest import mock_change_pc
+
 FIXTURE_PATH = Path(__file__).parent.parent / "fixtures" / "mercadona_algolia_hit_sample.json"
 
 MANIFEST_URL = "https://tienda.mercadona.es/asset-manifest.json"
@@ -29,6 +31,7 @@ BUNDLE_JS_WITH_CREDENTIALS = (
 async def test_missing_bulk_price_returns_null_price_format(
     client: AsyncClient, respx_mock: respx.MockRouter
 ) -> None:
+    mock_change_pc(respx_mock)
     respx_mock.get(MANIFEST_URL).mock(
         return_value=httpx.Response(200, json={"main.js": "/v815/static/js/main.35c4c08c.chunk.js"})
     )

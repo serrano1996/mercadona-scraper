@@ -12,6 +12,7 @@ import respx
 from httpx import AsyncClient
 
 from app.services.cache import CacheRepository
+from tests.integration.conftest import CHANGE_PC_URL
 
 MANIFEST_URL = "https://tienda.mercadona.es/asset-manifest.json"
 
@@ -19,7 +20,12 @@ MANIFEST_URL = "https://tienda.mercadona.es/asset-manifest.json"
 async def test_missing_header_never_calls_upstream_or_cache(
     client: AsyncClient, respx_mock: respx.MockRouter, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """T11 — 007-mercadona-scraper-warehouse-resolution: verify_api_key
+    short-circuits before resolve_warehouse too, so change-pc is never
+    called without a valid X-API-Key (no route in respx_mock for it —
+    a call would raise AllMockedAssertionError, not silently pass)."""
     manifest_route = respx_mock.get(MANIFEST_URL)
+    change_pc_route = respx_mock.put(CHANGE_PC_URL)
     cache_get_spy = AsyncMock(wraps=CacheRepository.get)
     monkeypatch.setattr(CacheRepository, "get", cache_get_spy)
 
@@ -31,6 +37,7 @@ async def test_missing_header_never_calls_upstream_or_cache(
 
     assert response.status_code == 401
     assert manifest_route.call_count == 0
+    assert change_pc_route.call_count == 0
     cache_get_spy.assert_not_called()
 
 
@@ -38,6 +45,7 @@ async def test_invalid_token_never_calls_upstream_or_cache(
     client: AsyncClient, respx_mock: respx.MockRouter, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     manifest_route = respx_mock.get(MANIFEST_URL)
+    change_pc_route = respx_mock.put(CHANGE_PC_URL)
     cache_get_spy = AsyncMock(wraps=CacheRepository.get)
     monkeypatch.setattr(CacheRepository, "get", cache_get_spy)
 
@@ -49,4 +57,5 @@ async def test_invalid_token_never_calls_upstream_or_cache(
 
     assert response.status_code == 401
     assert manifest_route.call_count == 0
+    assert change_pc_route.call_count == 0
     cache_get_spy.assert_not_called()

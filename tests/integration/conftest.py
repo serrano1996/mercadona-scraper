@@ -9,7 +9,9 @@ registering routes per test as done in tests/scrapers/test_mercadona_client*.py.
 from collections.abc import AsyncIterator
 
 import fakeredis
+import httpx
 import pytest
+import respx
 from httpx import ASGITransport, AsyncClient
 
 from app.main import app as fastapi_app
@@ -18,6 +20,20 @@ from app.main import app as fastapi_app
 # integration test authenticates by default (the `client` fixture sends it
 # on every request) without each test having to know about auth.
 TEST_API_KEY = "integration-test-api-key"
+
+# T11 — 007-mercadona-scraper-warehouse-resolution: every request now
+# resolves postal_code -> warehouse via change-pc before reaching
+# Mercadona's search backend. Tests written for specs 001-006 predate
+# this and don't mock it — mock_change_pc gives them a one-line, non-
+# autouse way to keep resolving to "mad1" (their original hardcoded
+# default) without changing what each test is actually asserting.
+CHANGE_PC_URL = "https://tienda.mercadona.es/api/postal-codes/actions/change-pc/"
+
+
+def mock_change_pc(respx_mock: respx.MockRouter, warehouse: str = "mad1") -> respx.Route:
+    return respx_mock.put(CHANGE_PC_URL).mock(
+        return_value=httpx.Response(200, headers={"x-customer-wh": warehouse})
+    )
 
 
 @pytest.fixture(autouse=True)

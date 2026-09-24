@@ -10,6 +10,8 @@ import pytest
 import respx
 from httpx import AsyncClient
 
+from tests.integration.conftest import mock_change_pc
+
 FIXTURE_PATH = Path(__file__).parent.parent / "fixtures" / "mercadona_algolia_hit_sample.json"
 
 MANIFEST_URL = "https://tienda.mercadona.es/asset-manifest.json"
@@ -36,6 +38,7 @@ def fast_retry(monkeypatch: pytest.MonkeyPatch) -> None:
 async def test_429_with_short_retry_after_is_absorbed(
     client: AsyncClient, respx_mock: respx.MockRouter
 ) -> None:
+    mock_change_pc(respx_mock)
     manifest_route = respx_mock.get(MANIFEST_URL).mock(
         side_effect=[
             httpx.Response(429, headers={"Retry-After": "0"}),
@@ -65,6 +68,7 @@ async def test_persistent_429_returns_502(
     """T11 (spec 002) — same pattern as spec 001's persistent-5xx test
     (T21), but with 429: the API consumer never needs to know Mercadona/
     Algolia rate-limited us specifically (RF-6)."""
+    mock_change_pc(respx_mock)
     manifest_route = respx_mock.get(MANIFEST_URL).mock(
         side_effect=[
             httpx.Response(429, headers={"Retry-After": "0"}),

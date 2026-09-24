@@ -18,7 +18,7 @@ from httpx import ASGITransport, AsyncClient
 from redis.exceptions import ConnectionError as RedisConnectionError
 
 from app.main import app as fastapi_app
-from tests.integration.conftest import TEST_API_KEY
+from tests.integration.conftest import TEST_API_KEY, mock_change_pc
 
 FIXTURE_PATH = Path(__file__).parent.parent / "fixtures" / "mercadona_algolia_hit_sample.json"
 
@@ -42,6 +42,10 @@ class _BrokenRedisFactory:
         broken = AsyncMock()
         broken.get.side_effect = RedisConnectionError("connection refused")
         broken.set.side_effect = RedisConnectionError("connection refused")
+        # T11 — WarehouseCacheRepository.get uses mget, not get, so it
+        # needs its own failure wired up for this test's "Redis is down"
+        # double to actually degrade there too.
+        broken.mget.side_effect = RedisConnectionError("connection refused")
         return broken
 
 
@@ -68,6 +72,7 @@ async def test_redis_down_degrades_to_direct_scrape(
     respx_mock: respx.MockRouter,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
+    mock_change_pc(respx_mock)
     respx_mock.get(MANIFEST_URL).mock(
         return_value=httpx.Response(200, json={"main.js": "/v815/static/js/main.35c4c08c.chunk.js"})
     )

@@ -94,7 +94,7 @@ Rama `007-warehouse-resolution-pr3`, base `007-warehouse-resolution-pr2`. Único
   RF: RF-6, RF-7.
   Hecho cuando: los tests están en verde y `pytest -q` completo sigue en verde.
 
-- [ ] **T11 — Regresión: actualiza la suite existente (specs 001-006) para `change-pc`**
+- [x] **T11 — Regresión: actualiza la suite existente (specs 001-006) para `change-pc`**
   Añade `mock_change_pc(respx_mock, warehouse="mad1")` (no autouse) en `tests/integration/conftest.py`; invócalo en los 11 archivos de integración afectados (`test_rf1..rf5`, `test_rf_edge_*`, `test_auth_happy_path`, `test_credential_caching`, `test_request_id_correlation`) que golpean `/api/v1/products`; en `test_rf3_retry.py`/`test_rf5_rate_limit.py` el `503`/`429` persistente se aplica sólo al manifest, `change-pc` responde `200`; en `test_auth_short_circuit.py` añade la aserción de que `change-pc` no se llama sin `X-API-Key`; en `tests/api/test_products*.py` y los dos tests de `tests/test_main.py` con `dependency_overrides`, añade el override de `get_warehouse_cache_repository` (`AsyncMock(spec=WarehouseCacheRepository)` con `get.return_value = None`) y `client.resolve_warehouse.return_value = "mad1"`.
   RED/GREEN: no aplica TDD clásico (no hay comportamiento nuevo que probar) — es la actualización mecánica de mocks que la suite existente necesita para no fallar tras T9/T10; cada archivo tocado se ejecuta tras el cambio para confirmar que vuelve a estar en verde.
   Depende: T10.

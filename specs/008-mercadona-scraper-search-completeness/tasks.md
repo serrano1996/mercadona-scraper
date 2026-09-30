@@ -101,7 +101,7 @@ Rama `008-search-completeness-pr2`, base `008-search-completeness-pr1`. Estimaci
   RF: criterio de finalización de spec.md; constitución #7, #8.
   Hecho cuando: ambos comandos terminan sin error y la cobertura del código nuevo/modificado no baja del 80%.
 
-- [ ] **T13 — Verificación final**
+- [x] **T13 — Verificación final**
   Con Algolia y `change-pc` mockeados (**nunca contra la API real de Mercadona**): `pytest -q` completo en verde (specs 001-008); `/docs` y `/openapi.json` muestran `page` (mínimo 1), `page_size` (1-100) y los límites de `term`. Verificación manual de spec.md: `term=leche` sin página ⇒ 50 productos, `total_results: 233`, `total_pages: 5`, `page: 1`; `page=5` ⇒ 33 productos; `page=6` ⇒ `404`; `page_size=101` ⇒ `422`; `term=%20%20` ⇒ `422`; `term=Leche` y `term=leche%20` ⇒ una sola llamada a Algolia.
   Depende: T12.
   RF: criterio de finalización de spec.md.

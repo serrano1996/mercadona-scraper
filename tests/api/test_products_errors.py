@@ -22,6 +22,7 @@ from app.core.config import Settings
 from app.exceptions import UpstreamUnavailableError
 from app.scrapers.mercadona_client import MercadonaClient
 from app.services.cache import CacheRepository, WarehouseCacheRepository
+from tests.fixtures.algolia import search_result
 
 
 def _settings() -> Settings:
@@ -144,3 +145,29 @@ async def test_get_products_returns_502_when_resolution_upstream_unavailable(
 
     assert response.status_code == 502
     client.search.assert_not_called()
+
+
+async def test_get_products_returns_404_when_page_is_out_of_range(app: FastAPI) -> None:
+    """T9 — 008-mercadona-scraper-search-completeness, RF-9: an empty page
+    beyond the first (Algolia reports nbHits 0 out of range) becomes a 404
+    with its own detail, distinct from "postal code not served"."""
+    cache = AsyncMock(spec=CacheRepository)
+    cache.get.return_value = None
+    client = AsyncMock(spec=MercadonaClient)
+    client.resolve_warehouse.return_value = "mad1"
+    client.search.return_value = search_result([], nb_hits=0, nb_pages=0)
+
+    app.dependency_overrides[get_cache_repository] = lambda: cache
+    app.dependency_overrides[get_mercadona_client] = lambda: client
+    app.dependency_overrides[get_settings] = lambda: _settings()
+    app.dependency_overrides[get_warehouse_cache_repository] = _warehouse_cache_miss
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as http_client:
+        response = await http_client.get(
+            "/api/v1/products", params={"postal_code": "28001", "term": "leche", "page": 6}
+        )
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Page out of range"}
+    cache.set.assert_not_called()

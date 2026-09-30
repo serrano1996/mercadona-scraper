@@ -73,7 +73,7 @@ Rama `008-search-completeness-pr2`, base `008-search-completeness-pr1`. Estimaci
   RF: RF-4, RF-6, RF-7, RF-9, RF-10.
   Hecho cuando: los tests nuevos y actualizados están en verde y `pytest -q` completo sigue en verde.
 
-- [ ] **T9 — `api/v1/products.py`: `404` por página fuera de rango**
+- [x] **T9 — `api/v1/products.py`: `404` por página fuera de rango**
   `except PageOutOfRangeError` ⇒ `HTTPException(404, detail="Page out of range")`; la descripción de `404` en `responses=` cubre los dos casos (código postal sin servicio y página fuera de rango).
   RED: `tests/api/test_products_errors.py` — `search_products` lanzando `PageOutOfRangeError` (vía `client.search` devolviendo cero hits con `page=2`) ⇒ `404` con `{"detail": "Page out of range"}`.
   GREEN: añade el `except` y actualiza `responses=`.

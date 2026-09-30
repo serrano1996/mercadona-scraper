@@ -10,7 +10,11 @@ from app.core.dependencies import (
     get_settings,
     get_warehouse_cache_repository,
 )
-from app.exceptions import PostalCodeNotServedError, UpstreamUnavailableError
+from app.exceptions import (
+    PageOutOfRangeError,
+    PostalCodeNotServedError,
+    UpstreamUnavailableError,
+)
 from app.models.product import ProductSearchResponse
 from app.models.query import ProductQuery
 from app.scrapers.mercadona_client import MercadonaClient
@@ -40,7 +44,12 @@ WarehouseCacheDep = Annotated[WarehouseCacheRepository, Depends(get_warehouse_ca
 @router.get(
     "/products",
     responses={
-        404: {"description": "Postal code is outside Mercadona's service area"},
+        404: {
+            "description": (
+                "Postal code is outside Mercadona's service area, or the requested "
+                "page is beyond the last page of results (see `detail`)"
+            )
+        },
         502: {"description": "Mercadona/Algolia is unavailable after retrying"},
     },
 )
@@ -58,6 +67,10 @@ async def get_products(
         )
     except PostalCodeNotServedError as exc:
         raise HTTPException(status_code=404, detail="Postal code not served by Mercadona") from exc
+    except PageOutOfRangeError as exc:
+        # spec 008 RF-9, Decision D4: same status as "not served", told
+        # apart by `detail`.
+        raise HTTPException(status_code=404, detail="Page out of range") from exc
     except UpstreamUnavailableError as exc:
         logger.exception(
             "Upstream unavailable for postal_code=%s term=%s", query.postal_code, query.term

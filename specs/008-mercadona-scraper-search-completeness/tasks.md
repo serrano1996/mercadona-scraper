@@ -24,7 +24,7 @@ Rama `008-search-completeness-pr1`, base `main` con la spec 007 fusionada. Cambi
   RF: RF-1, RF-3, RF-4.
   Hecho cuando: los tests nuevos están en verde y `pytest -q` completo sigue en verde.
 
-- [ ] **T3 — Docs vivas: `README.md` (término)**
+- [x] **T3 — Docs vivas: `README.md` (término)**
   Documenta que `term` se normaliza (espacios de los extremos, espacios internos repetidos, minúsculas), que la respuesta devuelve el término normalizado y que un término vacío, de solo espacios o de más de 100 caracteres responde `422`.
   Depende: T2.
   RF: constitución #9/#10 (docs vivas).

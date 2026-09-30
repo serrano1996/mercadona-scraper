@@ -107,6 +107,8 @@ curl -H "X-API-Key: <tu-token>" \
 
 `postal_code` se resuelve a su almacén Mercadona real (`change-pc` de Mercadona, cacheado — ver `specs/007-mercadona-scraper-warehouse-resolution/`), no a un valor fijo: precios y catálogo varían según el almacén.
 
+`term` se normaliza antes de buscar: se quitan los espacios de los extremos, los espacios internos repetidos se reducen a uno y se pasa a minúsculas (`"  Leche   ENTERA "` → `"leche entera"`). La respuesta devuelve el término normalizado en `search.term`. Motivo: el buscador de Mercadona ignora mayúsculas y espacios internos pero no los de los extremos, así que normalizar nunca empeora el resultado y permite que búsquedas equivalentes compartan cache (ver `specs/008-mercadona-scraper-search-completeness/`).
+
 Respuesta (`200`):
 
 ```json
@@ -132,7 +134,7 @@ Respuesta (`200`):
 }
 ```
 
-Sin `X-API-Key` (o con una inválida) → `401`. `postal_code` con formato inválido (≠ 5 dígitos) → `422`. `postal_code` fuera de la zona de servicio de Mercadona → `404`. Si Mercadona/Algolia no responde tras agotar los reintentos → `502`.
+Sin `X-API-Key` (o con una inválida) → `401`. `postal_code` con formato inválido (≠ 5 dígitos) → `422`. `term` vacío, de solo espacios o de más de 100 caracteres tras normalizar → `422` (un término vacío devolvería el catálogo entero). `postal_code` fuera de la zona de servicio de Mercadona → `404`. Si Mercadona/Algolia no responde tras agotar los reintentos → `502`.
 
 ## Docker
 

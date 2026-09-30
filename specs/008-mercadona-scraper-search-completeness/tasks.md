@@ -89,7 +89,7 @@ Rama `008-search-completeness-pr2`, base `008-search-completeness-pr1`. Estimaci
   RF: RF-1, RF-3, RF-5, RF-6, RF-7, RF-9, RF-10; H1, H2, H3, H4.
   Hecho cuando: todos los casos están en verde en un único archivo y `pytest -q` completo sigue en verde.
 
-- [ ] **T11 — Docs vivas: `README.md` (paginación)**
+- [x] **T11 — Docs vivas: `README.md` (paginación)**
   Parámetros `page` y `page_size` con sus límites, campos nuevos de `SearchMeta` en el ejemplo de respuesta, `total_results` como total real, `404` por página fuera de rango, y el límite de 1000 resultados paginables de Algolia (`total_pages × page_size < total_results`).
   Depende: T10.
   RF: constitución #9/#10 (docs vivas).

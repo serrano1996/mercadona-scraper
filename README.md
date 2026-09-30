@@ -109,6 +109,22 @@ curl -H "X-API-Key: <tu-token>" \
 
 `term` se normaliza antes de buscar: se quitan los espacios de los extremos, los espacios internos repetidos se reducen a uno y se pasa a minúsculas (`"  Leche   ENTERA "` → `"leche entera"`). La respuesta devuelve el término normalizado en `search.term`. Motivo: el buscador de Mercadona ignora mayúsculas y espacios internos pero no los de los extremos, así que normalizar nunca empeora el resultado y permite que búsquedas equivalentes compartan cache (ver `specs/008-mercadona-scraper-search-completeness/`).
 
+Los resultados se paginan con dos parámetros opcionales:
+
+| Parámetro | Default | Rango | Descripción |
+| --------- | ------- | ----- | ----------- |
+| `page` | `1` | ≥ 1 | Página a devolver (la primera es `1`) |
+| `page_size` | `50` | 1-100 | Productos por página |
+
+Sin ellos se devuelve la primera página de 50, como antes. `search.total_results` es el **total real** de productos que coinciden con la búsqueda, no los de la página; para recorrerlos todos, pide `page` desde `1` hasta `search.total_pages`:
+
+```bash
+curl -H "X-API-Key: <tu-token>" \
+  "http://localhost:8000/api/v1/products?postal_code=46001&term=leche&page=2&page_size=50"
+```
+
+El buscador de Mercadona solo deja paginar los primeros 1000 resultados. En búsquedas muy amplias `total_pages × page_size` puede ser menor que `total_results`: los productos que quedan más allá no son accesibles.
+
 Respuesta (`200`):
 
 ```json
@@ -119,7 +135,10 @@ Respuesta (`200`):
     "warehouse": "vlc1",
     "strategy_used": "algolia",
     "scraped_at": "2026-09-21T10:00:00Z",
-    "total_results": 1
+    "total_results": 233,
+    "page": 1,
+    "page_size": 50,
+    "total_pages": 5
   },
   "products": [
     {
@@ -134,7 +153,9 @@ Respuesta (`200`):
 }
 ```
 
-Sin `X-API-Key` (o con una inválida) → `401`. `postal_code` con formato inválido (≠ 5 dígitos) → `422`. `term` vacío, de solo espacios o de más de 100 caracteres tras normalizar → `422` (un término vacío devolvería el catálogo entero). `postal_code` fuera de la zona de servicio de Mercadona → `404`. Si Mercadona/Algolia no responde tras agotar los reintentos → `502`.
+(Se muestra un solo producto; la respuesta real trae hasta `page_size`.)
+
+Sin `X-API-Key` (o con una inválida) → `401`. `postal_code` con formato inválido (≠ 5 dígitos) → `422`. `term` vacío, de solo espacios o de más de 100 caracteres tras normalizar → `422` (un término vacío devolvería el catálogo entero). `page` < 1 o `page_size` fuera de 1-100 → `422`. `postal_code` fuera de la zona de servicio de Mercadona → `404` (`"Postal code not served by Mercadona"`). `page` más allá de la última página → `404` (`"Page out of range"`). Si Mercadona/Algolia no responde tras agotar los reintentos → `502`.
 
 ## Docker
 
@@ -186,6 +207,7 @@ Specs completas:
 | `005-mercadona-scraper-dockerization` | Dockerfile, docker-compose, endpoint `/health` |
 | `006-mercadona-scraper-refactor` | Cache de credenciales Algolia, providers de DI centralizados, tipado de `app.state` |
 | `007-mercadona-scraper-warehouse-resolution` | Resolución real `postal_code → almacén` vía Mercadona, cache Redis con TTL propio, clave de cache de productos por almacén |
+| `008-mercadona-scraper-search-completeness` | Total real de resultados, paginación (`page`, `page_size`), validación y normalización del término |
 
 ## Limitaciones conocidas
 

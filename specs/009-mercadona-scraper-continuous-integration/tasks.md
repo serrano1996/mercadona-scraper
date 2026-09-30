@@ -45,7 +45,8 @@ Rama `009-continuous-integration`, base `main`. Estimación: **≈80 líneas esc
   RF: RF-3, RF-9, RF-11; constitución #9/#10.
   Hecho cuando: el README recoge los cinco puntos y `ruff check .` y `ruff format --check .` siguen limpios.
 
-- [ ] **T6 — Verificación en GitHub** (requiere autorización del usuario para subir la rama y abrir PRs)
+- [x] **T6 — Verificación en GitHub** (requiere autorización del usuario para subir la rama y abrir PRs)
+  **Resultado (PR #2, 2026-09-30):** verde en el PR (Python 3.11.16, 38 paquetes desde `uv.lock`, 217 tests, 99,24%); rojo en **Tests** con el test roto temporal; rojo en **la instalación** con `pyproject.toml` modificado sin re-lock (`The lockfile at uv.lock needs to be updated, but --locked was provided`); verde tras revertir ambos. Fusionado con merge commit `cc5dba7`; la CI del `push` a `main` terminó en verde y el badge muestra `passing`. La primera ejecución falló porque `astral-sh/setup-uv` no publica etiqueta flotante `v10`; corregido fijando `@v10.2.0` (commit `15c9af5`).
   Subir la rama `009-continuous-integration` y abrir el PR contra `main`.
   Comprobaciones: la CI se ejecuta en el PR y termina en verde con Python 3.11 (RF-6, RF-7, RF-8, RF-10); un commit temporal con un test roto la pone en rojo en el paso de `pytest` y el fallo se ve en el PR (RF-8); un commit temporal que añade una dependencia a `pyproject.toml` sin regenerar el lock la pone en rojo en el paso de `uv sync` (RF-2). Ambos commits temporales se revierten antes de fusionar. Tras fusionar, el `push` a `main` ejecuta la CI en verde y el badge del README muestra el estado (RF-11).
   Depende: T5.

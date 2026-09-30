@@ -2,17 +2,26 @@
 
 # ---- builder ----
 # T3 — 005-mercadona-scraper-dockerization: installs only production
-# dependencies via `pip install .` directly from pyproject.toml — the
-# [project.optional-dependencies].dev group (pytest, ruff, respx,
-# fakeredis) is never installed here (plan.md Decision D3).
+# dependencies — the [project.optional-dependencies].dev group (pytest,
+# ruff, respx, fakeredis) is never installed here (plan.md Decision D3).
+# T3 — 009-mercadona-scraper-continuous-integration: the exact versions
+# come from uv.lock, the same ones CI tests, instead of whatever
+# `pip install .` resolves on build day (spec 009 RF-4, plan.md D5).
+# --locked makes the build fail if uv.lock is out of sync with
+# pyproject.toml (RF-2). uv is only used here; the runtime stage
+# below never contains it.
 FROM python:3.11-slim AS builder
+
+COPY --from=ghcr.io/astral-sh/uv:0.12.10 /uv /bin/uv
 
 WORKDIR /app
 
-COPY pyproject.toml ./
+COPY pyproject.toml uv.lock ./
 COPY app/ ./app/
 
-RUN pip install --no-cache-dir .
+RUN uv export --locked --no-emit-project --format requirements-txt > requirements.txt \
+    && pip install --no-cache-dir -r requirements.txt \
+    && pip install --no-cache-dir --no-deps .
 
 # ---- runtime ----
 # T4 — copies only the installed dependencies + app/ source from

@@ -1,5 +1,7 @@
 # Mercadona Scraper API
 
+[![CI](https://github.com/serrano1996/mercadona-scraper/actions/workflows/ci.yml/badge.svg)](https://github.com/serrano1996/mercadona-scraper/actions/workflows/ci.yml)
+
 API REST asíncrona construida con FastAPI que expone la búsqueda de productos de Mercadona. Extrae datos del backend real de búsqueda de Mercadona (Algolia), los valida y transforma con Pydantic, y cachea los resultados en Redis para minimizar peticiones innecesarias. Protegida con autenticación por token y pensada para ejecutarse tal cual en Docker.
 
 Proyecto académico (TFM), desarrollado siguiendo **Spec-Driven Development (SDD)**: cada funcionalidad nace de una spec en `specs/`, revisada y aprobada antes de escribir una sola línea de código.
@@ -14,6 +16,7 @@ Proyecto académico (TFM), desarrollado siguiendo **Spec-Driven Development (SDD
 - [Uso de la API](#uso-de-la-api)
 - [Docker](#docker)
 - [Tests y calidad](#tests-y-calidad)
+- [Integración continua](#integración-continua)
 - [Desarrollo dirigido por especificaciones (SDD)](#desarrollo-dirigido-por-especificaciones-sdd)
 - [Limitaciones conocidas](#limitaciones-conocidas)
 
@@ -61,19 +64,29 @@ docker-compose.yml  # API + Redis para desarrollo/pruebas locales
 
 ## Requisitos
 
-- Python 3.11 o superior
+- [`uv`](https://docs.astral.sh/uv/) (recomendado): instala Python 3.11 y las versiones exactas de `uv.lock`
+- O bien Python 3.11 o superior con `pip` (sin garantía de versiones exactas)
 - Redis accesible (local, contenedor, o gestionado) — no necesario si solo vas a correr los tests (usan `fakeredis`)
 - Docker + Docker Compose (opcional, para ejecución containerizada)
 
 ## Instalación y ejecución local
 
+Con `uv` (recomendado — mismo entorno que la CI y la imagen Docker):
+
+```bash
+uv sync --locked --extra dev     # Python 3.11 (.python-version) + versiones exactas de uv.lock
+
+cp .env.example .env             # y rellena los valores (ver siguiente sección)
+
+uv run uvicorn app.main:app --reload
+```
+
+Con `pip` (funciona, pero resuelve las últimas versiones compatibles en lugar de las de `uv.lock`):
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
-
-cp .env.example .env             # y rellena los valores (ver siguiente sección)
-
 uvicorn app.main:app --reload
 ```
 
@@ -175,17 +188,36 @@ docker run -p 8000:8000 \
   mercadona-scraper
 ```
 
-La imagen corre como usuario sin privilegios y expone un `HEALTHCHECK` contra `GET /health`.
+La imagen corre como usuario sin privilegios y expone un `HEALTHCHECK` contra `GET /health`. Sus dependencias se instalan desde `uv.lock`, así que lleva exactamente las versiones que prueba la CI; si `uv.lock` no está sincronizado con `pyproject.toml`, el build falla.
 
 ## Tests y calidad
 
 ```bash
-pytest -q                 # suite completa (nunca contra Mercadona real)
-pytest --cov=app          # con cobertura
-ruff check . && ruff format .
+uv run pytest -q                 # suite completa (nunca contra Mercadona real)
+uv run pytest --cov=app          # con cobertura; falla por debajo del 80%
+uv run ruff check . && uv run ruff format .
 ```
 
+(Sin `uv`, los mismos comandos sin el prefijo `uv run`.) El umbral de cobertura del 80% está en `pyproject.toml` y se aplica siempre que se use `--cov`: si ejecutas un solo fichero de tests **con** `--cov`, fallará por cobertura total baja; sin `--cov` no afecta.
+
 Los tests de integración usan `respx` para simular Mercadona/Algolia y `fakeredis` para Redis — ninguna ejecución de `pytest` toca la red real.
+
+## Integración continua
+
+Cada `push` a `main` y cada PR contra `main` ejecutan [`.github/workflows/ci.yml`](.github/workflows/ci.yml) en GitHub Actions, con **Python 3.11** (la misma versión que la imagen Docker) y las dependencias instaladas **solo desde `uv.lock`**:
+
+1. `uv sync --locked --extra dev` — falla si `uv.lock` no está sincronizado con `pyproject.toml`
+2. `ruff check .`
+3. `ruff format --check .`
+4. `pytest -q --cov=app` — falla si algún test falla o la cobertura baja del 80%
+
+No necesita secretos ni servicios externos, y tiene permisos de solo lectura sobre el repositorio. El resultado aparece junto a cada commit y PR, y en el badge de arriba.
+
+**Reproducir la CI en local:** `uv sync --locked --extra dev` y los tres comandos de la sección anterior.
+
+**Actualizar dependencias:** edita `pyproject.toml` y ejecuta `uv lock` (o `uv lock --upgrade` para subir todo a las últimas versiones compatibles), y commitea `uv.lock` junto al cambio. La CI confirma en el PR que la suite sigue pasando con las versiones nuevas.
+
+**Proteger `main` (paso manual en GitHub):** *Settings → Branches → Add branch protection rule* para `main`, marca *Require status checks to pass before merging* y selecciona el check `test` del workflow `CI`. Así no se puede fusionar un PR con la CI en rojo. La CI solo prueba el último commit de cada `push`: un commit intermedio en rojo dentro de un PR con varios commits no se detecta por separado.
 
 ## Desarrollo dirigido por especificaciones (SDD)
 
@@ -208,6 +240,7 @@ Specs completas:
 | `006-mercadona-scraper-refactor` | Cache de credenciales Algolia, providers de DI centralizados, tipado de `app.state` |
 | `007-mercadona-scraper-warehouse-resolution` | Resolución real `postal_code → almacén` vía Mercadona, cache Redis con TTL propio, clave de cache de productos por almacén |
 | `008-mercadona-scraper-search-completeness` | Total real de resultados, paginación (`page`, `page_size`), validación y normalización del término |
+| `009-mercadona-scraper-continuous-integration` | CI en GitHub Actions con Python 3.11, `uv.lock` compartido con la imagen Docker, umbral de cobertura del 80% |
 
 ## Limitaciones conocidas
 

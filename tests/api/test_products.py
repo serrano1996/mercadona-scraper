@@ -146,3 +146,52 @@ async def test_get_products_rejects_invalid_postal_code_without_calling_mercadon
     client.resolve_warehouse.assert_not_called()
     client.search.assert_not_called()
     warehouse_cache.get.assert_not_called()
+
+
+async def test_get_products_rejects_blank_term_without_calling_mercadona(app: FastAPI) -> None:
+    """T2 — 008-mercadona-scraper-search-completeness, RF-1: a blank term
+    is rejected by ProductQuery validation at the route boundary (Decision
+    D1 in plan.md), before warehouse resolution or search."""
+    cache = AsyncMock(spec=CacheRepository)
+    client = AsyncMock(spec=MercadonaClient)
+    warehouse_cache = AsyncMock(spec=WarehouseCacheRepository)
+
+    app.dependency_overrides[get_cache_repository] = lambda: cache
+    app.dependency_overrides[get_mercadona_client] = lambda: client
+    app.dependency_overrides[get_settings] = lambda: _settings()
+    app.dependency_overrides[get_warehouse_cache_repository] = lambda: warehouse_cache
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as http_client:
+        response = await http_client.get(
+            "/api/v1/products", params={"postal_code": "28001", "term": "  "}
+        )
+
+    assert response.status_code == 422
+    client.resolve_warehouse.assert_not_called()
+    client.search.assert_not_called()
+
+
+async def test_get_products_searches_and_reports_the_normalized_term(app: FastAPI) -> None:
+    """T2 — RF-3/RF-4: the route searches with the normalized term and
+    reports that same term back in SearchMeta.term."""
+    cache = AsyncMock(spec=CacheRepository)
+    cache.get.return_value = None
+    client = AsyncMock(spec=MercadonaClient)
+    client.resolve_warehouse.return_value = "mad1"
+    client.search.return_value = []
+
+    app.dependency_overrides[get_cache_repository] = lambda: cache
+    app.dependency_overrides[get_mercadona_client] = lambda: client
+    app.dependency_overrides[get_settings] = lambda: _settings()
+    app.dependency_overrides[get_warehouse_cache_repository] = _warehouse_cache_miss
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as http_client:
+        response = await http_client.get(
+            "/api/v1/products", params={"postal_code": "28001", "term": "Leche "}
+        )
+
+    assert response.status_code == 200
+    client.search.assert_awaited_once_with(term="leche", warehouse="mad1")
+    assert response.json()["search"]["term"] == "leche"

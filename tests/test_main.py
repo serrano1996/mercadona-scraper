@@ -8,12 +8,17 @@ from unittest.mock import AsyncMock
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.v1.products import get_cache_repository, get_mercadona_client, get_settings
+from app.api.v1.products import (
+    get_cache_repository,
+    get_mercadona_client,
+    get_settings,
+    get_warehouse_cache_repository,
+)
 from app.core.config import Settings
 from app.main import app
 from app.scrapers.http_client_factory import USER_AGENTS
 from app.scrapers.mercadona_client import MercadonaClient
-from app.services.cache import CacheRepository
+from app.services.cache import CacheRepository, WarehouseCacheRepository
 
 # T6 — 004-mercadona-scraper-authentication: shared valid token for tests
 # that need to get past auth to exercise what they actually test.
@@ -180,10 +185,14 @@ def test_unhandled_exception_returns_500_and_logs_traceback(
     cache = AsyncMock(spec=CacheRepository)
     cache.get.return_value = None
     client = AsyncMock(spec=MercadonaClient)
+    client.resolve_warehouse.return_value = "mad1"
     client.search.side_effect = RuntimeError("boom")
+    warehouse_cache = AsyncMock(spec=WarehouseCacheRepository)
+    warehouse_cache.get.return_value = None
 
     app.dependency_overrides[get_cache_repository] = lambda: cache
     app.dependency_overrides[get_mercadona_client] = lambda: client
+    app.dependency_overrides[get_warehouse_cache_repository] = lambda: warehouse_cache
     app.dependency_overrides[get_settings] = lambda: Settings(
         MERCADONA_BASE_URL="https://tienda.mercadona.es", REDIS_URL="redis://localhost:6379/0"
     )
@@ -210,3 +219,8 @@ def test_unhandled_exception_returns_500_and_logs_traceback(
     assert response.json() == {"detail": "Internal server error"}
     error_logs = [r for r in caplog.records if r.levelno == logging.ERROR]
     assert any(r.exc_info is not None for r in error_logs)
+    # The failure must come from search() with a real resolved warehouse,
+    # not from an accidental MagicMock warehouse produced by a real Redis
+    # being unreachable — i.e. this test never touches the real Redis at
+    # REDIS_URL, even when one is running locally (docker compose up).
+    client.search.assert_awaited_once_with(term="leche", warehouse="mad1")

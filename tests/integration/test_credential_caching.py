@@ -12,6 +12,7 @@ import httpx
 import respx
 from httpx import AsyncClient
 
+from tests.fixtures.algolia import algolia_response
 from tests.integration.conftest import mock_change_pc
 
 FIXTURE_PATH = Path(__file__).parent.parent / "fixtures" / "mercadona_algolia_hit_sample.json"
@@ -41,7 +42,7 @@ async def test_second_distinct_search_reuses_credentials_across_requests(
     hit = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
     algolia_route = respx_mock.post(
         f"https://{FAKE_APP_ID}-dsn.algolia.net/1/indexes/*/queries"
-    ).mock(return_value=httpx.Response(200, json={"results": [{"hits": [hit]}]}))
+    ).mock(return_value=httpx.Response(200, json=algolia_response([hit])))
 
     first = await client.get("/api/v1/products", params={"postal_code": "28001", "term": "leche"})
     second = await client.get("/api/v1/products", params={"postal_code": "28001", "term": "agua"})

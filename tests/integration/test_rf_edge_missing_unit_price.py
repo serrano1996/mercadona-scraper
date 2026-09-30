@@ -10,6 +10,7 @@ import httpx
 import respx
 from httpx import AsyncClient
 
+from tests.fixtures.algolia import algolia_response
 from tests.integration.conftest import mock_change_pc
 
 FIXTURE_PATH = Path(__file__).parent.parent / "fixtures" / "mercadona_algolia_hit_sample.json"
@@ -41,7 +42,7 @@ async def test_missing_bulk_price_returns_null_price_format(
     hit = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
     hit["price_instructions"]["bulk_price"] = None
     respx_mock.post(f"https://{FAKE_APP_ID}-dsn.algolia.net/1/indexes/*/queries").mock(
-        return_value=httpx.Response(200, json={"results": [{"hits": [hit]}]})
+        return_value=httpx.Response(200, json=algolia_response([hit]))
     )
 
     response = await client.get(

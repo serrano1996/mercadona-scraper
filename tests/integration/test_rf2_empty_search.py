@@ -5,6 +5,7 @@ import httpx
 import respx
 from httpx import AsyncClient
 
+from tests.fixtures.algolia import algolia_response
 from tests.integration.conftest import mock_change_pc
 
 MANIFEST_URL = "https://tienda.mercadona.es/asset-manifest.json"
@@ -30,7 +31,7 @@ def _mock_upstream_chain_with_no_hits(respx_mock: respx.MockRouter) -> None:
         return_value=httpx.Response(200, text=BUNDLE_JS_WITH_CREDENTIALS)
     )
     respx_mock.post(f"https://{FAKE_APP_ID}-dsn.algolia.net/1/indexes/*/queries").mock(
-        return_value=httpx.Response(200, json={"results": [{"hits": []}]})
+        return_value=httpx.Response(200, json=algolia_response([]))
     )
 
 

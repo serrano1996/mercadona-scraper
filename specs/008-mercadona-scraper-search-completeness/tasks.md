@@ -34,7 +34,7 @@ Rama `008-search-completeness-pr1`, base `main` con la spec 007 fusionada. Cambi
 
 Rama `008-search-completeness-pr2`, base `008-search-completeness-pr1`. Estimación: **≈360 líneas** (plan.md §7, pasos 4-12 de §5). T7 concentra el cambio de firma de `MercadonaClient.search` y la migración de sus mocks en un único commit para no dejar la suite en rojo.
 
-- [ ] **T4 — Helper `algolia_response` y migración de las respuestas de Algolia simuladas**
+- [x] **T4 — Helper `algolia_response` y migración de las respuestas de Algolia simuladas**
   Nuevo `tests/fixtures/algolia.py` con `algolia_response(hits: list[dict[str, object]], nb_hits: int | None = None, nb_pages: int = 1) -> dict[str, object]` que construye `{"results": [{"hits": hits, "nbHits": nb_hits if nb_hits is not None else len(hits), "nbPages": nb_pages}]}` (D6 de plan.md). Sustituye el cuerpo literal `{"results": [{"hits": [...]}]}` por el helper en los 12 ficheros que lo usan: `tests/integration/test_credential_caching.py`, `test_request_id_correlation.py`, `test_rf1_happy_path.py`, `test_rf2_empty_search.py`, `test_rf3_retry.py`, `test_rf4_cache_hit.py`, `test_rf5_rate_limit.py`, `test_rf_edge_missing_unit_price.py`, `test_rf_edge_redis_down.py`, `test_warehouse_resolution.py`, `tests/scrapers/test_mercadona_client.py` y `test_mercadona_client_retry.py`.
   RED/GREEN: no aplica TDD clásico — refactor de tests sin cambio de comportamiento: hoy `search()` sólo lee `hits`, así que añadir `nbHits`/`nbPages` a las respuestas simuladas no cambia nada. Cada fichero tocado se ejecuta tras el cambio.
   Depende: T3.

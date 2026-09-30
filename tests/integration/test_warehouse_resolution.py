@@ -13,6 +13,7 @@ import pytest
 import respx
 from httpx import AsyncClient
 
+from tests.fixtures.algolia import algolia_response
 from tests.integration.conftest import CHANGE_PC_URL
 from tests.integration.test_rf_edge_redis_down import client_with_broken_redis  # noqa: F401
 
@@ -41,7 +42,7 @@ def _mock_credentials_and_algolia(respx_mock: respx.MockRouter) -> respx.Route:
     )
     hit = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
     return respx_mock.post(f"https://{FAKE_APP_ID}-dsn.algolia.net/1/indexes/*/queries").mock(
-        return_value=httpx.Response(200, json={"results": [{"hits": [hit]}]})
+        return_value=httpx.Response(200, json=algolia_response([hit]))
     )
 
 

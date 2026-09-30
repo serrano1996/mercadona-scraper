@@ -18,6 +18,7 @@ from httpx import ASGITransport, AsyncClient
 from redis.exceptions import ConnectionError as RedisConnectionError
 
 from app.main import app as fastapi_app
+from tests.fixtures.algolia import algolia_response
 from tests.integration.conftest import TEST_API_KEY, mock_change_pc
 
 FIXTURE_PATH = Path(__file__).parent.parent / "fixtures" / "mercadona_algolia_hit_sample.json"
@@ -81,7 +82,7 @@ async def test_redis_down_degrades_to_direct_scrape(
     )
     hit = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
     respx_mock.post(f"https://{FAKE_APP_ID}-dsn.algolia.net/1/indexes/*/queries").mock(
-        return_value=httpx.Response(200, json={"results": [{"hits": [hit]}]})
+        return_value=httpx.Response(200, json=algolia_response([hit]))
     )
 
     with caplog.at_level(logging.WARNING):

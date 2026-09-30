@@ -22,6 +22,7 @@ import respx
 
 from app.core.config import Settings
 from app.scrapers.mercadona_client import MercadonaClient
+from tests.fixtures.algolia import algolia_response
 
 FIXTURE_PATH = Path(__file__).parent.parent / "fixtures" / "mercadona_algolia_hit_sample.json"
 
@@ -53,7 +54,7 @@ def settings() -> Settings:
 
 def _algolia_response_with_one_hit() -> dict:
     hit = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
-    return {"results": [{"hits": [hit]}]}
+    return algolia_response([hit])
 
 
 async def test_retries_up_to_max_attempts_then_raises_on_persistent_5xx(

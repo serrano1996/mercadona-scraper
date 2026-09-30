@@ -45,13 +45,13 @@ RF: **RF-3, RF-7**.
 ### D3 — Workflow único, un job, `uv` + `--locked`
 **Elegido:** `.github/workflows/ci.yml` con un único job en `ubuntu-latest`:
 1. `actions/checkout@v7`.
-2. `astral-sh/setup-uv@v10` con `python-version: "3.11"` y caché de `uv` activada.
+2. `astral-sh/setup-uv@v10.2.0` (etiqueta exacta: el proyecto dejó de publicar etiquetas mayores flotantes tras `v7`, así que `@v10` no existe — detectado en la primera ejecución de la CI) con `python-version: "3.11"` y caché de `uv` activada.
 3. `uv sync --locked --extra dev` (falla si el lock está desfasado, RF-2).
 4. `uv run ruff check .` → `uv run ruff format --check .` → `uv run pytest -q --cov=app` (RF-8), en pasos separados para que GitHub muestre cuál falla.
 
 Disparadores: `push` a `main` y `pull_request` contra `main` (RF-6). `permissions: contents: read` (RF-10). `concurrency` por rama con `cancel-in-progress` para no acumular ejecuciones de un PR que se actualiza varias veces.
 **Descartado (matriz de versiones de Python):** fuera de alcance (spec.md, RF-7).
-**Descartado (acciones fijadas por SHA en lugar de versión mayor):** más seguro frente a una etiqueta comprometida, pero exige actualizar SHAs a mano. Para un TFM se acepta la versión mayor (`@v7`, `@v10`); queda anotado como mejora.
+**Descartado (acciones fijadas por SHA en lugar de versión mayor):** más seguro frente a una etiqueta comprometida, pero exige actualizar SHAs a mano. Para un TFM se acepta la etiqueta de versión (`@v7`, `@v10.2.0`); queda anotado como mejora.
 RF: **RF-2, RF-6, RF-7, RF-8, RF-10**.
 
 ### D4 — Umbral de cobertura en `pyproject.toml`, no en la línea de comandos de la CI

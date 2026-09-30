@@ -30,6 +30,9 @@ def sample_response() -> ProductSearchResponse:
             strategy_used="api",
             scraped_at=datetime.now(UTC),
             total_results=1,
+            page=1,
+            page_size=50,
+            total_pages=1,
         ),
         products=[
             ProductOut(

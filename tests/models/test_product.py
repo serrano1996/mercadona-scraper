@@ -42,6 +42,9 @@ def test_search_meta_valid() -> None:
         strategy_used="api",
         scraped_at=datetime.now(UTC),
         total_results=1,
+        page=1,
+        page_size=50,
+        total_pages=1,
     )
 
     assert meta.total_results == 1
@@ -55,6 +58,9 @@ def test_product_search_response_allows_empty_products_list() -> None:
         strategy_used="api",
         scraped_at=datetime.now(UTC),
         total_results=0,
+        page=1,
+        page_size=50,
+        total_pages=0,
     )
 
     response = ProductSearchResponse(search=meta, products=[])

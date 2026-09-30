@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 import httpx
 
 from app.core.config import Settings
-from app.exceptions import UpstreamUnavailableError
+from app.exceptions import PageOutOfRangeError, UpstreamUnavailableError
 from app.mappers.product_mapper import map_raw_algolia_product_to_product_out
 from app.models.product import ProductSearchResponse, SearchMeta
 from app.models.query import ProductQuery
@@ -21,10 +21,12 @@ async def search_products(
     settings: Settings,
 ) -> ProductSearchResponse:
     # Keyed by warehouse, not postal_code (spec 007 RF-6, Decision D8 in
-    # plan.md): two postal codes resolving to the same warehouse must
+    # plan.md 007): two postal codes resolving to the same warehouse must
     # share this cache entry, and two resolving to different warehouses
-    # must never collide.
-    cache_key = f"search:{warehouse}:{query.term}"
+    # must never collide. Page and page_size are part of the key (spec 008
+    # RF-10); the format change also stops pre-008 entries, which lack the
+    # page fields, from ever being read back (Decision D5 in plan.md 008).
+    cache_key = f"search:{warehouse}:{query.term}:{query.page}:{query.page_size}"
     cached = await cache.get(cache_key)
     if cached is not None:
         # RF-7: the cache entry may have been written by a different
@@ -46,6 +48,11 @@ async def search_products(
                 f"Mercadona/Algolia returned {exc.response.status_code}"
             ) from exc
         raise
+    if query.page > 1 and not result.hits:
+        # Algolia answers an out-of-range page with nbHits 0, so the total
+        # can't tell "no results" from "past the last page" (spec 008 RF-9,
+        # Decision D4). Raised before caching: never cache this answer.
+        raise PageOutOfRangeError(f"page {query.page} is out of range")
     products = [map_raw_algolia_product_to_product_out(raw) for raw in result.hits]
     response = ProductSearchResponse(
         search=SearchMeta(
@@ -54,7 +61,10 @@ async def search_products(
             warehouse=warehouse,
             strategy_used=_STRATEGY_USED,
             scraped_at=datetime.now(UTC),
-            total_results=len(products),
+            total_results=result.nbHits,
+            page=query.page,
+            page_size=query.page_size,
+            total_pages=result.nbPages,
         ),
         products=products,
     )

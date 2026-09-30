@@ -65,6 +65,10 @@ async def test_get_products_returns_exact_response_shape(
         "strategy_used",
         "scraped_at",
         "total_results",
+        # Added by spec 008 (RF-7): additive contract change.
+        "page",
+        "page_size",
+        "total_pages",
     }
 
     assert len(body["products"]) == 1

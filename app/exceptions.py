@@ -9,3 +9,10 @@ class PostalCodeNotServedError(Exception):
     """Raised when Mercadona has no warehouse for a given postal_code (404
     from change-pc). Lets the API layer map this to 404 without depending
     on Mercadona's own error_msg (spec 007 RF-9, Decision D4 in plan.md)."""
+
+
+class PageOutOfRangeError(Exception):
+    """Raised when a page beyond the first comes back empty from Algolia
+    (spec 008 RF-9, Decision D4 in plan.md). Lets the API layer map it to
+    404 instead of reporting Algolia's out-of-range nbHits of 0 as if the
+    search had no results."""

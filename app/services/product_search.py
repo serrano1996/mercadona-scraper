@@ -35,7 +35,9 @@ async def search_products(
         )
 
     try:
-        raw_products = await client.search(term=query.term, warehouse=warehouse)
+        result = await client.search(
+            term=query.term, warehouse=warehouse, page=query.page, page_size=query.page_size
+        )
     except httpx.TransportError as exc:
         raise UpstreamUnavailableError("Mercadona/Algolia is unreachable") from exc
     except httpx.HTTPStatusError as exc:
@@ -44,7 +46,7 @@ async def search_products(
                 f"Mercadona/Algolia returned {exc.response.status_code}"
             ) from exc
         raise
-    products = [map_raw_algolia_product_to_product_out(raw) for raw in raw_products]
+    products = [map_raw_algolia_product_to_product_out(raw) for raw in result.hits]
     response = ProductSearchResponse(
         search=SearchMeta(
             postal_code=query.postal_code,

@@ -10,8 +10,10 @@ from pathlib import Path
 import httpx
 import pytest
 import respx
+from pydantic import ValidationError
 
 from app.core.config import Settings
+from app.models.mercadona_raw import RawAlgoliaSearchResult
 from app.scrapers.mercadona_client import AlgoliaCredentialsUnavailable, MercadonaClient
 from tests.fixtures.algolia import algolia_response
 
@@ -65,7 +67,9 @@ async def test_search_returns_parsed_products(settings: Settings) -> None:
 
         async with httpx.AsyncClient() as http_client:
             client = MercadonaClient(http_client, settings)
-            products = await client.search(term="leche", warehouse="mad1")
+            products = (
+                await client.search(term="leche", warehouse="mad1", page=1, page_size=50)
+            ).hits
 
     assert len(products) == 1
     assert products[0].id == "10381"
@@ -86,7 +90,7 @@ async def test_search_sends_correct_algolia_index_and_headers(settings: Settings
 
         async with httpx.AsyncClient() as http_client:
             client = MercadonaClient(http_client, settings)
-            await client.search(term="leche", warehouse="mad1")
+            await client.search(term="leche", warehouse="mad1", page=1, page_size=50)
 
     sent_request = algolia_route.calls.last.request
     assert sent_request.headers["X-Algolia-Application-Id"] == FAKE_APP_ID
@@ -113,8 +117,8 @@ async def test_second_search_reuses_cached_algolia_credentials(settings: Setting
 
         async with httpx.AsyncClient() as http_client:
             client = MercadonaClient(http_client, settings)
-            await client.search(term="leche", warehouse="mad1")
-            await client.search(term="agua", warehouse="mad1")
+            await client.search(term="leche", warehouse="mad1", page=1, page_size=50)
+            await client.search(term="agua", warehouse="mad1", page=1, page_size=50)
 
     assert manifest_route.call_count == 1
     assert bundle_route.call_count == 1
@@ -142,7 +146,9 @@ async def test_search_retries_once_with_fresh_credentials_after_401(
 
         async with httpx.AsyncClient() as http_client:
             client = MercadonaClient(http_client, settings)
-            products = await client.search(term="leche", warehouse="mad1")
+            products = (
+                await client.search(term="leche", warehouse="mad1", page=1, page_size=50)
+            ).hits
 
     assert len(products) == 1
     assert manifest_route.call_count == 2
@@ -165,7 +171,7 @@ async def test_search_still_raises_when_retry_also_gets_401(settings: Settings) 
         async with httpx.AsyncClient() as http_client:
             client = MercadonaClient(http_client, settings)
             with pytest.raises(httpx.HTTPStatusError) as exc_info:
-                await client.search(term="leche", warehouse="mad1")
+                await client.search(term="leche", warehouse="mad1", page=1, page_size=50)
 
     assert exc_info.value.response.status_code == 401
 
@@ -182,7 +188,7 @@ async def test_search_raises_when_credentials_not_found(settings: Settings) -> N
         async with httpx.AsyncClient() as http_client:
             client = MercadonaClient(http_client, settings)
             with pytest.raises(AlgoliaCredentialsUnavailable):
-                await client.search(term="leche", warehouse="mad1")
+                await client.search(term="leche", warehouse="mad1", page=1, page_size=50)
 
 
 async def test_search_logs_error_when_credentials_not_found(
@@ -202,8 +208,72 @@ async def test_search_logs_error_when_credentials_not_found(
             client = MercadonaClient(http_client, settings)
             with caplog.at_level(logging.ERROR):
                 with pytest.raises(AlgoliaCredentialsUnavailable):
-                    await client.search(term="leche", warehouse="mad1")
+                    await client.search(term="leche", warehouse="mad1", page=1, page_size=50)
 
     error_logs = [r for r in caplog.records if r.levelno == logging.ERROR]
     assert len(error_logs) == 1
     assert BUNDLE_URL in error_logs[0].getMessage()
+
+
+def _mock_credentials(mock: respx.MockRouter) -> None:
+    mock.get("https://tienda.mercadona.es/asset-manifest.json").mock(
+        return_value=httpx.Response(200, json=MANIFEST_PAYLOAD)
+    )
+    mock.get(BUNDLE_URL).mock(return_value=httpx.Response(200, text=BUNDLE_JS_WITH_CREDENTIALS))
+
+
+@pytest.mark.parametrize(("page", "page_size", "algolia_page"), [(1, 50, 0), (3, 20, 2)])
+async def test_search_translates_public_page_to_algolia(
+    settings: Settings, page: int, page_size: int, algolia_page: int
+) -> None:
+    """T7 — 008-mercadona-scraper-search-completeness, RF-5: the public
+    page is 1-based, Algolia's is 0-based (verified live 2026-09-30)."""
+    with respx.mock(assert_all_called=True) as mock:
+        _mock_credentials(mock)
+        algolia_route = mock.post(
+            f"https://{FAKE_APP_ID}-dsn.algolia.net/1/indexes/*/queries"
+        ).mock(return_value=httpx.Response(200, json=_algolia_response_with_one_hit()))
+
+        async with httpx.AsyncClient() as http_client:
+            client = MercadonaClient(http_client, settings)
+            await client.search(term="leche", warehouse="mad1", page=page, page_size=page_size)
+
+    params = json.loads(algolia_route.calls.last.request.content)["requests"][0]["params"]
+    assert f"page={algolia_page}" in params.split("&")
+    assert f"hitsPerPage={page_size}" in params.split("&")
+
+
+async def test_search_returns_real_totals(settings: Settings) -> None:
+    """T7 — RF-6/RF-7: search() returns Algolia's real total and page
+    count alongside the current page's hits."""
+    hit = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
+    with respx.mock(assert_all_called=True) as mock:
+        _mock_credentials(mock)
+        mock.post(f"https://{FAKE_APP_ID}-dsn.algolia.net/1/indexes/*/queries").mock(
+            return_value=httpx.Response(200, json=algolia_response([hit], nb_hits=233, nb_pages=5))
+        )
+
+        async with httpx.AsyncClient() as http_client:
+            client = MercadonaClient(http_client, settings)
+            result = await client.search(term="leche", warehouse="mad1", page=1, page_size=50)
+
+    assert isinstance(result, RawAlgoliaSearchResult)
+    assert result.nbHits == 233
+    assert result.nbPages == 5
+    assert len(result.hits) == 1
+
+
+async def test_search_fails_loudly_without_algolia_totals(settings: Settings) -> None:
+    """T7 — Decision D3: a response without nbHits is a broken upstream
+    contract, not a search with an unknown total."""
+    hit = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
+    with respx.mock(assert_all_called=True) as mock:
+        _mock_credentials(mock)
+        mock.post(f"https://{FAKE_APP_ID}-dsn.algolia.net/1/indexes/*/queries").mock(
+            return_value=httpx.Response(200, json={"results": [{"hits": [hit], "nbPages": 1}]})
+        )
+
+        async with httpx.AsyncClient() as http_client:
+            client = MercadonaClient(http_client, settings)
+            with pytest.raises(ValidationError):
+                await client.search(term="leche", warehouse="mad1", page=1, page_size=50)

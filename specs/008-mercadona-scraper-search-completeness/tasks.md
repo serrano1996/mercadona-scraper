@@ -57,7 +57,7 @@ Rama `008-search-completeness-pr2`, base `008-search-completeness-pr1`. Estimaci
   RF: RF-5.
   Hecho cuando: los tests nuevos están en verde y `pytest -q` completo sigue en verde.
 
-- [ ] **T7 — `MercadonaClient.search(term, warehouse, page, page_size) -> RawAlgoliaSearchResult` y migración de sus mocks**
+- [x] **T7 — `MercadonaClient.search(term, warehouse, page, page_size) -> RawAlgoliaSearchResult` y migración de sus mocks**
   El cliente envía `page={page - 1}&hitsPerPage={page_size}` a Algolia (página pública 1-based, Algolia 0-based) y valida `results[0]` completo como `RawAlgoliaSearchResult` (D2). Elimina `_ALGOLIA_HITS_PER_PAGE`. `search_products` pasa `page=query.page, page_size=query.page_size` y usa `result.hits` en lugar de la lista (sin cambiar todavía `total_results` ni la clave: eso es T8). En el mismo commit, migra los mocks de `client.search` a `RawAlgoliaSearchResult`: `tests/api/test_products.py` (3), `tests/api/test_products_errors.py` (2), `tests/services/test_product_search.py` (1), `tests/services/test_product_search_errors.py` (4), `tests/test_main.py` (3).
   RED: `tests/scrapers/test_mercadona_client.py` — `search(..., page=1, page_size=50)` envía `page=0` y `hitsPerPage=50` en los `params` del cuerpo de Algolia; `page=3, page_size=20` envía `page=2` y `hitsPerPage=20`; devuelve `RawAlgoliaSearchResult` con `nbHits`/`nbPages` tal como vienen; respuesta sin `nbHits` ⇒ `ValidationError`. `tests/api/test_products.py` — sin `page`/`page_size` ⇒ `client.search` recibe `page=1, page_size=50` (RF-8).
   GREEN: implementa el cambio de firma y migra los mocks.

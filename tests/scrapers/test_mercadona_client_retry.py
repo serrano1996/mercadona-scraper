@@ -68,7 +68,7 @@ async def test_retries_up_to_max_attempts_then_raises_on_persistent_5xx(
         async with httpx.AsyncClient() as http_client:
             client = MercadonaClient(http_client, settings)
             with pytest.raises(httpx.HTTPStatusError):
-                await client.search(term="leche", warehouse="mad1")
+                await client.search(term="leche", warehouse="mad1", page=1, page_size=50)
 
     assert route.call_count == 3
 
@@ -85,7 +85,7 @@ async def test_exhausted_retries_logs_error(
             client = MercadonaClient(http_client, settings)
             with caplog.at_level(logging.WARNING):
                 with pytest.raises(httpx.HTTPStatusError):
-                    await client.search(term="leche", warehouse="mad1")
+                    await client.search(term="leche", warehouse="mad1", page=1, page_size=50)
 
     error_logs = [r for r in caplog.records if r.levelno == logging.ERROR]
     warning_logs = [r for r in caplog.records if r.levelno == logging.WARNING]
@@ -110,7 +110,9 @@ async def test_recovers_on_third_attempt_after_two_5xx(settings: Settings) -> No
 
         async with httpx.AsyncClient() as http_client:
             client = MercadonaClient(http_client, settings)
-            products = await client.search(term="leche", warehouse="mad1")
+            products = (
+                await client.search(term="leche", warehouse="mad1", page=1, page_size=50)
+            ).hits
 
     assert manifest_route.call_count == 3
     assert len(products) == 1
@@ -123,7 +125,7 @@ async def test_does_not_retry_on_4xx(settings: Settings) -> None:
         async with httpx.AsyncClient() as http_client:
             client = MercadonaClient(http_client, settings)
             with pytest.raises(httpx.HTTPStatusError):
-                await client.search(term="leche", warehouse="mad1")
+                await client.search(term="leche", warehouse="mad1", page=1, page_size=50)
 
     assert route.call_count == 1
 
@@ -143,7 +145,9 @@ async def test_429_with_retry_after_seconds_recovers(settings: Settings) -> None
 
         async with httpx.AsyncClient() as http_client:
             client = MercadonaClient(http_client, settings)
-            products = await client.search(term="leche", warehouse="mad1")
+            products = (
+                await client.search(term="leche", warehouse="mad1", page=1, page_size=50)
+            ).hits
 
     assert manifest_route.call_count == 2
     assert len(products) == 1
@@ -161,7 +165,9 @@ async def test_429_without_retry_after_falls_back_to_backoff(settings: Settings)
 
         async with httpx.AsyncClient() as http_client:
             client = MercadonaClient(http_client, settings)
-            products = await client.search(term="leche", warehouse="mad1")
+            products = (
+                await client.search(term="leche", warehouse="mad1", page=1, page_size=50)
+            ).hits
 
     assert manifest_route.call_count == 2
     assert len(products) == 1
@@ -180,7 +186,7 @@ async def test_persistent_429_exhausts_retries_and_raises(settings: Settings) ->
         async with httpx.AsyncClient() as http_client:
             client = MercadonaClient(http_client, settings)
             with pytest.raises(httpx.HTTPStatusError) as exc_info:
-                await client.search(term="leche", warehouse="mad1")
+                await client.search(term="leche", warehouse="mad1", page=1, page_size=50)
 
     assert exc_info.value.response.status_code == 429
     assert route.call_count == 3
@@ -206,7 +212,7 @@ async def test_retry_after_above_cap_is_clamped_to_60s(
 
         async with httpx.AsyncClient() as http_client:
             client = MercadonaClient(http_client, settings)
-            await client.search(term="leche", warehouse="mad1")
+            await client.search(term="leche", warehouse="mad1", page=1, page_size=50)
 
     sleep_mock.assert_awaited_once_with(60.0)
 
@@ -237,7 +243,7 @@ async def test_jitter_is_added_on_top_of_retry_after(monkeypatch: pytest.MonkeyP
 
         async with httpx.AsyncClient() as http_client:
             client = MercadonaClient(http_client, settings)
-            await client.search(term="leche", warehouse="mad1")
+            await client.search(term="leche", warehouse="mad1", page=1, page_size=50)
 
     sleep_mock.assert_awaited_once_with(10.15)
 
@@ -267,7 +273,7 @@ async def test_jitter_is_added_on_top_of_exponential_backoff(
 
         async with httpx.AsyncClient() as http_client:
             client = MercadonaClient(http_client, settings)
-            await client.search(term="leche", warehouse="mad1")
+            await client.search(term="leche", warehouse="mad1", page=1, page_size=50)
 
     # base backoff for attempt 0 is RETRY_BASE_DELAY * 2**0 = 0.5, + jitter 0.15
     sleep_mock.assert_awaited_once_with(0.65)

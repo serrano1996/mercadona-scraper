@@ -19,6 +19,7 @@ from app.main import app
 from app.scrapers.http_client_factory import USER_AGENTS
 from app.scrapers.mercadona_client import MercadonaClient
 from app.services.cache import CacheRepository, WarehouseCacheRepository
+from tests.fixtures.algolia import search_result
 
 # T6 — 004-mercadona-scraper-authentication: shared valid token for tests
 # that need to get past auth to exercise what they actually test.
@@ -93,7 +94,7 @@ def test_products_router_requires_api_key() -> None:
     cache = AsyncMock(spec=CacheRepository)
     cache.get.return_value = None
     client_mock = AsyncMock(spec=MercadonaClient)
-    client_mock.search.return_value = []
+    client_mock.search.return_value = search_result([])
 
     app.dependency_overrides[get_cache_repository] = lambda: cache
     app.dependency_overrides[get_mercadona_client] = lambda: client_mock
@@ -223,4 +224,4 @@ def test_unhandled_exception_returns_500_and_logs_traceback(
     # not from an accidental MagicMock warehouse produced by a real Redis
     # being unreachable — i.e. this test never touches the real Redis at
     # REDIS_URL, even when one is running locally (docker compose up).
-    client.search.assert_awaited_once_with(term="leche", warehouse="mad1")
+    client.search.assert_awaited_once_with(term="leche", warehouse="mad1", page=1, page_size=50)

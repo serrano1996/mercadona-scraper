@@ -5,6 +5,8 @@ Algolia backend returns for a search, so every test mocks the same shape
 always sets them too — defaulting to "all hits fit in one page".
 """
 
+from app.models.mercadona_raw import RawAlgoliaProduct, RawAlgoliaSearchResult
+
 
 def algolia_response(
     hits: list[dict[str, object]], nb_hits: int | None = None, nb_pages: int = 1
@@ -18,3 +20,13 @@ def algolia_response(
             }
         ]
     }
+
+
+def search_result(
+    hits: list[RawAlgoliaProduct], nb_hits: int | None = None, nb_pages: int = 1
+) -> RawAlgoliaSearchResult:
+    """T7 — what MercadonaClient.search returns, for AsyncMock-based tests
+    that never go through HTTP. Same defaults as algolia_response."""
+    return RawAlgoliaSearchResult(
+        hits=hits, nbHits=nb_hits if nb_hits is not None else len(hits), nbPages=nb_pages
+    )

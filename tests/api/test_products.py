@@ -21,6 +21,7 @@ from app.core.config import Settings
 from app.models.mercadona_raw import RawAlgoliaProduct
 from app.scrapers.mercadona_client import MercadonaClient
 from app.services.cache import CacheRepository, WarehouseCacheRepository
+from tests.fixtures.algolia import search_result
 
 FIXTURE_PATH = Path(__file__).parent.parent / "fixtures" / "mercadona_algolia_hit_sample.json"
 
@@ -55,7 +56,7 @@ async def test_get_products_returns_200_with_results(app: FastAPI) -> None:
     cache.get.return_value = None
     client = AsyncMock(spec=MercadonaClient)
     client.resolve_warehouse.return_value = "mad1"
-    client.search.return_value = [_raw_algolia_product()]
+    client.search.return_value = search_result([_raw_algolia_product()])
 
     app.dependency_overrides[get_cache_repository] = lambda: cache
     app.dependency_overrides[get_mercadona_client] = lambda: client
@@ -81,7 +82,7 @@ async def test_get_products_returns_200_with_empty_list_when_no_matches(app: Fas
     cache.get.return_value = None
     client = AsyncMock(spec=MercadonaClient)
     client.resolve_warehouse.return_value = "mad1"
-    client.search.return_value = []
+    client.search.return_value = search_result([])
 
     app.dependency_overrides[get_cache_repository] = lambda: cache
     app.dependency_overrides[get_mercadona_client] = lambda: client
@@ -107,7 +108,7 @@ async def test_get_products_passes_resolved_warehouse_to_search(app: FastAPI) ->
     cache.get.return_value = None
     client = AsyncMock(spec=MercadonaClient)
     client.resolve_warehouse.return_value = "vlc1"
-    client.search.return_value = []
+    client.search.return_value = search_result([])
 
     app.dependency_overrides[get_cache_repository] = lambda: cache
     app.dependency_overrides[get_mercadona_client] = lambda: client
@@ -118,7 +119,7 @@ async def test_get_products_passes_resolved_warehouse_to_search(app: FastAPI) ->
     async with AsyncClient(transport=transport, base_url="http://test") as http_client:
         await http_client.get("/api/v1/products", params={"postal_code": "46001", "term": "leche"})
 
-    client.search.assert_awaited_once_with(term="leche", warehouse="vlc1")
+    client.search.assert_awaited_once_with(term="leche", warehouse="vlc1", page=1, page_size=50)
 
 
 async def test_get_products_rejects_invalid_postal_code_without_calling_mercadona(
@@ -179,7 +180,7 @@ async def test_get_products_searches_and_reports_the_normalized_term(app: FastAP
     cache.get.return_value = None
     client = AsyncMock(spec=MercadonaClient)
     client.resolve_warehouse.return_value = "mad1"
-    client.search.return_value = []
+    client.search.return_value = search_result([])
 
     app.dependency_overrides[get_cache_repository] = lambda: cache
     app.dependency_overrides[get_mercadona_client] = lambda: client
@@ -193,7 +194,7 @@ async def test_get_products_searches_and_reports_the_normalized_term(app: FastAP
         )
 
     assert response.status_code == 200
-    client.search.assert_awaited_once_with(term="leche", warehouse="mad1")
+    client.search.assert_awaited_once_with(term="leche", warehouse="mad1", page=1, page_size=50)
     assert response.json()["search"]["term"] == "leche"
 
 

@@ -22,15 +22,13 @@ from urllib.parse import quote
 import httpx
 
 from app.core.config import Settings
-from app.models.mercadona_raw import RawAlgoliaProduct
+from app.models.mercadona_raw import RawAlgoliaSearchResult
 
 logger = logging.getLogger(__name__)
 
 _APP_ID_PATTERN = re.compile(r'REACT_APP_ALGOLIA_ID:"([A-Z0-9]{6,12})"')
 _API_KEY_PATTERN = re.compile(r'REACT_APP_ALGOLIA_KEY:"([a-f0-9]{20,40})"')
 _INDEX_PREFIX_PATTERN = re.compile(r'REACT_APP_ALGOLIA_NAME:"([a-z_]+)"')
-
-_ALGOLIA_HITS_PER_PAGE = 50
 
 # Upper bound on how long a single retry waits because of a Retry-After
 # value, so a disproportionate or malicious value from the server can't
@@ -135,9 +133,16 @@ class MercadonaClient:
             )
         return warehouse
 
-    async def search(self, term: str, warehouse: str) -> list[RawAlgoliaProduct]:
+    async def search(
+        self, term: str, warehouse: str, *, page: int, page_size: int
+    ) -> RawAlgoliaSearchResult:
+        """Fetches one page of Algolia results plus the real total (spec 008
+        RF-5/RF-6/RF-7, Decision D2 in plan.md). `page` is the public 1-based
+        page; Algolia's is 0-based, so it's translated here and nowhere else."""
         app_id, api_key, index_prefix = await self._get_algolia_credentials()
-        response = await self._search_algolia(app_id, api_key, index_prefix, term, warehouse)
+        response = await self._search_algolia(
+            app_id, api_key, index_prefix, term, warehouse, page, page_size
+        )
         if response.status_code in (401, 403):
             # Cached credentials rejected — Mercadona may have rotated the
             # bundle without this process restarting (spec 006 RF-2).
@@ -146,13 +151,21 @@ class MercadonaClient:
             # as it always has (RF-3: same final behavior on failure).
             self._algolia_credentials = None
             app_id, api_key, index_prefix = await self._get_algolia_credentials()
-            response = await self._search_algolia(app_id, api_key, index_prefix, term, warehouse)
+            response = await self._search_algolia(
+                app_id, api_key, index_prefix, term, warehouse, page, page_size
+            )
         response.raise_for_status()
-        hits = response.json()["results"][0]["hits"]
-        return [RawAlgoliaProduct.model_validate(hit) for hit in hits]
+        return RawAlgoliaSearchResult.model_validate(response.json()["results"][0])
 
     async def _search_algolia(
-        self, app_id: str, api_key: str, index_prefix: str, term: str, warehouse: str
+        self,
+        app_id: str,
+        api_key: str,
+        index_prefix: str,
+        term: str,
+        warehouse: str,
+        page: int,
+        page_size: int,
     ) -> httpx.Response:
         index_name = f"{index_prefix}_{warehouse}_es"
         return await self._request_with_retry(
@@ -169,7 +182,7 @@ class MercadonaClient:
                         "indexName": index_name,
                         "params": (
                             f"query={quote(term)}"
-                            f"&hitsPerPage={_ALGOLIA_HITS_PER_PAGE}&attributesToRetrieve=*"
+                            f"&hitsPerPage={page_size}&page={page - 1}&attributesToRetrieve=*"
                         ),
                     }
                 ]

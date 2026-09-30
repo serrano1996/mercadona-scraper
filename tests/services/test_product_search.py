@@ -20,6 +20,7 @@ from app.models.query import ProductQuery
 from app.scrapers.mercadona_client import MercadonaClient
 from app.services.cache import CacheRepository
 from app.services.product_search import search_products
+from tests.fixtures.algolia import search_result
 
 ALGOLIA_FIXTURE_PATH = (
     Path(__file__).parent.parent / "fixtures" / "mercadona_algolia_hit_sample.json"
@@ -103,14 +104,14 @@ async def test_cache_miss_fetches_maps_and_caches_result() -> None:
     cache = AsyncMock(spec=CacheRepository)
     cache.get.return_value = None
     client = AsyncMock(spec=MercadonaClient)
-    client.search.return_value = [_raw_algolia_product()]
+    client.search.return_value = search_result([_raw_algolia_product()])
     query = ProductQuery(postal_code="28001", term="leche")
 
     result = await search_products(
         query, warehouse="mad1", cache=cache, client=client, settings=_settings()
     )
 
-    client.search.assert_awaited_once_with(term="leche", warehouse="mad1")
+    client.search.assert_awaited_once_with(term="leche", warehouse="mad1", page=1, page_size=50)
     assert result.search.postal_code == "28001"
     assert result.search.term == "leche"
     assert result.search.warehouse == "mad1"

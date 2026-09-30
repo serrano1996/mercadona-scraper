@@ -95,7 +95,7 @@ Rama `008-search-completeness-pr2`, base `008-search-completeness-pr1`. Estimaci
   RF: constitución #9/#10 (docs vivas).
   Hecho cuando: el ejemplo de respuesta del README incluye `page`, `page_size` y `total_pages`, y los parámetros nuevos están documentados.
 
-- [ ] **T12 — Lint, format y cobertura**
+- [x] **T12 — Lint, format y cobertura**
   `ruff check . && ruff format .` limpio; `pytest --cov=app` ≥80% sobre el código nuevo/modificado.
   Depende: T1–T11.
   RF: criterio de finalización de spec.md; constitución #7, #8.

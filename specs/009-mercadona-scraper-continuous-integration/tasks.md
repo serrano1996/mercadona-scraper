@@ -23,7 +23,8 @@ Rama `009-continuous-integration`, base `main`. Estimación: **≈80 líneas esc
   RF: RF-9.
   Hecho cuando: el umbral está en `pyproject.toml`, `uv run pytest -q --cov=app` pasa y `uv lock --check` pasa.
 
-- [ ] **T3 — `Dockerfile`: dependencias desde `uv.lock`**
+- [x] **T3 — `Dockerfile`: dependencias desde `uv.lock`**
+  **Nota de la verificación:** la imagen anterior tenía las mismas versiones principales que el lock (ambos resueltos el mismo día), pero no se construía desde él. `packaging`, `pip`, `setuptools` y `wheel` vienen de la imagen base `python:3.11-slim`, no de la app; `async-timeout` no se instala porque su marcador del lock es `python_full_version < '3.11.3'` y la base es 3.11.16. Con esas salvedades, las dependencias de la app en la imagen coinciden exactamente con el lock.
   En la etapa `builder`: `COPY --from=ghcr.io/astral-sh/uv:0.12.10 /uv /bin/uv`, copia `pyproject.toml` y `uv.lock`, `uv export --locked --no-emit-project --format requirements-txt > requirements.txt`, `pip install --no-cache-dir -r requirements.txt` y `pip install --no-cache-dir --no-deps .` (D5). La etapa `runtime` no cambia.
   RED: la imagen actual, construida con `pip install .`, lleva otra versión de FastAPI que la del lock (comprobar con `docker run --rm <imagen> python -c "import fastapi; print(fastapi.__version__)"` antes del cambio).
   GREEN: `docker build -t mercadona-scraper:ci .` termina; la misma comprobación muestra `0.142.2`; `pytest` y `ruff` **no** están instalados en la imagen (`python -c "import pytest"` falla); un contenedor arrancado con `MERCADONA_BASE_URL` y `REDIS_URL` llega a estado `healthy` y `GET /health` responde `{"status": "ok"}`.

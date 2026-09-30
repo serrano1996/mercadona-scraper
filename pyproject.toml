@@ -32,6 +32,11 @@ include = ["app*"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+# Tests import shared helpers as `tests.*` (since spec 004). Only
+# `python -m pytest` put the repo root on sys.path; plain `pytest` (the
+# documented command, and what CI runs) failed collection with
+# ModuleNotFoundError. Found by spec 009.
+pythonpath = ["."]
 
 [tool.ruff]
 line-length = 100

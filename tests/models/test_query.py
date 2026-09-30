@@ -83,3 +83,28 @@ def test_product_query_measures_length_after_normalizing(term: str) -> None:
     query = ProductQuery(postal_code="28001", term=term)
 
     assert query.term == "a" * 100
+
+
+def test_product_query_pagination_defaults() -> None:
+    """T6 — 008-mercadona-scraper-search-completeness, RF-5/RF-8: without
+    page/page_size a query asks for the same first page of 50 as before."""
+    query = ProductQuery(postal_code="28001", term="leche")
+
+    assert query.page == 1
+    assert query.page_size == 50
+
+
+@pytest.mark.parametrize("page_size", [1, 100])
+def test_product_query_accepts_page_size_bounds(page_size: int) -> None:
+    query = ProductQuery(postal_code="28001", term="leche", page_size=page_size)
+
+    assert query.page_size == page_size
+
+
+@pytest.mark.parametrize(
+    ("field", "value"), [("page", 0), ("page", -1), ("page_size", 0), ("page_size", 101)]
+)
+def test_product_query_rejects_out_of_range_pagination(field: str, value: int) -> None:
+    """T6 — RF-5: page is 1-based; page_size is capped at 100."""
+    with pytest.raises(ValidationError):
+        ProductQuery.model_validate({"postal_code": "28001", "term": "leche", field: value})

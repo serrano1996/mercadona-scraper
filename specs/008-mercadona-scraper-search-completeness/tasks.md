@@ -49,7 +49,7 @@ Rama `008-search-completeness-pr2`, base `008-search-completeness-pr1`. Estimaci
   RF: RF-6, RF-7.
   Hecho cuando: los tests nuevos están en verde y `pytest -q` completo sigue en verde.
 
-- [ ] **T6 — `models/query.py`: `page` y `page_size`**
+- [x] **T6 — `models/query.py`: `page` y `page_size`**
   `page: int = Field(default=1, ge=1)` y `page_size: int = Field(default=50, ge=1, le=100)`. Aditivo: la ruta los acepta pero todavía no los usa (lo hace T7/T8).
   RED: `tests/models/test_query.py` — defaults `page == 1` y `page_size == 50`; acepta `page_size` 1 y 100; rechaza `page` 0 y -1, `page_size` 0 y 101. `tests/api/test_products.py` — `page_size=101` ⇒ `422` sin llamar a `resolve_warehouse` ni a `search`.
   GREEN: añade los dos campos.

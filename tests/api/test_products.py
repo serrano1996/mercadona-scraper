@@ -195,3 +195,29 @@ async def test_get_products_searches_and_reports_the_normalized_term(app: FastAP
     assert response.status_code == 200
     client.search.assert_awaited_once_with(term="leche", warehouse="mad1")
     assert response.json()["search"]["term"] == "leche"
+
+
+async def test_get_products_rejects_oversized_page_without_calling_mercadona(
+    app: FastAPI,
+) -> None:
+    """T6 — 008-mercadona-scraper-search-completeness, RF-5: page_size
+    over 100 is rejected at the route boundary, before any upstream call."""
+    cache = AsyncMock(spec=CacheRepository)
+    client = AsyncMock(spec=MercadonaClient)
+    warehouse_cache = AsyncMock(spec=WarehouseCacheRepository)
+
+    app.dependency_overrides[get_cache_repository] = lambda: cache
+    app.dependency_overrides[get_mercadona_client] = lambda: client
+    app.dependency_overrides[get_settings] = lambda: _settings()
+    app.dependency_overrides[get_warehouse_cache_repository] = lambda: warehouse_cache
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as http_client:
+        response = await http_client.get(
+            "/api/v1/products",
+            params={"postal_code": "28001", "term": "leche", "page_size": 101},
+        )
+
+    assert response.status_code == 422
+    client.resolve_warehouse.assert_not_called()
+    client.search.assert_not_called()

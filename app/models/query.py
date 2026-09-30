@@ -9,6 +9,11 @@ class ProductQuery(BaseModel):
     # blank term normalizes to "" and fails min_length instead of fetching
     # Mercadona's whole catalog.
     term: str = Field(min_length=1, max_length=100)
+    # 1-based for the public API even though Algolia is 0-based (spec 008
+    # RF-5); MercadonaClient translates. Defaults keep the pre-008 behavior
+    # of a single first page of 50 (RF-8).
+    page: int = Field(default=1, ge=1)
+    page_size: int = Field(default=50, ge=1, le=100)
 
     @field_validator("term", mode="before")
     @classmethod

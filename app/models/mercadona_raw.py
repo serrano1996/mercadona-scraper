@@ -124,3 +124,21 @@ class RawAlgoliaProduct(BaseModel):
     score: float
     popularity_score: int
     objectID: str
+
+
+class RawAlgoliaSearchResult(BaseModel):
+    """One entry of Algolia's `results` array for a search query (spec 008
+    RF-6/RF-7, Decision D2 in plan.md): the current page's hits plus the
+    real total (`nbHits`) and page count (`nbPages`).
+
+    Both totals are required, with no default (Decision D3): every real
+    response carried them when verified live on 2026-09-30 — including an
+    out-of-range page and a blank term — so a missing one means Algolia
+    changed its contract and must fail loudly, never produce a fake
+    total. `nbPages` already reflects Algolia's pagination cap (1000 hits),
+    so it can be smaller than ceil(nbHits / hitsPerPage).
+    """
+
+    hits: list[RawAlgoliaProduct]
+    nbHits: int
+    nbPages: int

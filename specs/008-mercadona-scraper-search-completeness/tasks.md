@@ -41,7 +41,7 @@ Rama `008-search-completeness-pr2`, base `008-search-completeness-pr1`. Estimaci
   RF: soporte de RF-6, RF-7 (D6).
   Hecho cuando: ningún test construye ya el cuerpo de Algolia a mano y `pytest -q` completo sigue en verde.
 
-- [ ] **T5 — `models/mercadona_raw.py`: `RawAlgoliaSearchResult`**
+- [x] **T5 — `models/mercadona_raw.py`: `RawAlgoliaSearchResult`**
   `RawAlgoliaSearchResult(BaseModel)` con `hits: list[RawAlgoliaProduct]`, `nbHits: int`, `nbPages: int`, todos obligatorios (D3 de plan.md).
   RED: `tests/models/test_mercadona_raw.py` — valida `algolia_response([hit], nb_hits=233, nb_pages=5)["results"][0]` con `nbHits == 233`, `nbPages == 5` y un hit; sin `nbHits` ⇒ `ValidationError`; sin `nbPages` ⇒ `ValidationError`.
   GREEN: añade el modelo.

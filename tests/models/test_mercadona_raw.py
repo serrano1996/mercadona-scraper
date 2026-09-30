@@ -8,7 +8,11 @@ undocumented shape (constitution #2/#5).
 import json
 from pathlib import Path
 
-from app.models.mercadona_raw import RawProduct
+import pytest
+from pydantic import ValidationError
+
+from app.models.mercadona_raw import RawAlgoliaSearchResult, RawProduct
+from tests.fixtures.algolia import algolia_response
 
 FIXTURE_PATH = Path(__file__).parent.parent / "fixtures" / "mercadona_product_sample.json"
 
@@ -53,3 +57,38 @@ def test_raw_product_allows_integer_iva() -> None:
     product = RawProduct.model_validate(payload)
 
     assert product.price_instructions.iva == 10
+
+
+ALGOLIA_HIT_FIXTURE_PATH = (
+    Path(__file__).parent.parent / "fixtures" / "mercadona_algolia_hit_sample.json"
+)
+
+
+def _algolia_result(**overrides: object) -> dict[str, object]:
+    hit = json.loads(ALGOLIA_HIT_FIXTURE_PATH.read_text(encoding="utf-8"))
+    result = algolia_response([hit], nb_hits=233, nb_pages=5)["results"][0]
+    return {**result, **overrides}
+
+
+def test_raw_algolia_search_result_keeps_real_totals() -> None:
+    """T5 — 008-mercadona-scraper-search-completeness, RF-6/RF-7: the
+    real total (nbHits) and page count (nbPages) survive validation, not
+    just the hits of the current page."""
+    result = RawAlgoliaSearchResult.model_validate(_algolia_result())
+
+    assert result.nbHits == 233
+    assert result.nbPages == 5
+    assert len(result.hits) == 1
+    assert result.hits[0].id == "10381"
+
+
+@pytest.mark.parametrize("missing_field", ["nbHits", "nbPages"])
+def test_raw_algolia_search_result_requires_totals(missing_field: str) -> None:
+    """T5 — Decision D3 in plan.md: no default for the totals — if Algolia
+    ever stops sending them, fail loudly instead of reporting a fake
+    total."""
+    payload = _algolia_result()
+    del payload[missing_field]
+
+    with pytest.raises(ValidationError):
+        RawAlgoliaSearchResult.model_validate(payload)

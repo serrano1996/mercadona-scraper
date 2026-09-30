@@ -81,7 +81,7 @@ Rama `008-search-completeness-pr2`, base `008-search-completeness-pr1`. Estimaci
   RF: RF-9.
   Hecho cuando: los tests nuevos están en verde y `pytest -q` completo sigue en verde.
 
-- [ ] **T10 — Integración nueva: `tests/integration/test_search_completeness.py`**
+- [x] **T10 — Integración nueva: `tests/integration/test_search_completeness.py`**
   App real + `lifespan` + fakeredis + respx, cero llamadas reales a Mercadona; `mock_change_pc` de `tests/integration/conftest.py` y `algolia_response` de T4.
   RED: `term=leche` sin página ⇒ 50 productos, `total_results: 233`, `total_pages: 5`, `page: 1`, `page_size: 50` (H1); `page=5` ⇒ el cuerpo enviado a Algolia lleva `page=4` (H2); `page=6` con Algolia devolviendo `hits: []`, `nbHits: 0`, `nbPages: 0` ⇒ `404`, y repetir la petición vuelve a llamar a Algolia porque no se cacheó (RF-9); `term=Leche` y luego `term=leche%20` ⇒ Algolia `call_count == 1` (H4, RF-10); `term=%20%20` ⇒ `422` (H3).
   GREEN: si algún caso falla, ajustar T7-T9 (no debería hacer falta código nuevo).

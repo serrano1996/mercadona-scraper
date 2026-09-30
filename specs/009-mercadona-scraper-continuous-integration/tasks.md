@@ -39,7 +39,7 @@ Rama `009-continuous-integration`, base `main`. Estimación: **≈80 líneas esc
   RF: RF-6, RF-7, RF-8, RF-10.
   Hecho cuando: el fichero existe, es YAML válido, y los cuatro comandos del job pasan en local en ese orden.
 
-- [ ] **T5 — Docs vivas: `README.md`**
+- [x] **T5 — Docs vivas: `README.md`**
   Badge de estado del workflow (`https://github.com/serrano1996/mercadona-scraper/actions/workflows/ci.yml/badge.svg`) al principio; sección de entorno con `uv sync --locked --extra dev` como forma recomendada de reproducir la CI (y el aviso de que usa Python 3.11 por `.python-version`); cómo actualizar dependencias (`uv lock --upgrade` o editar `pyproject.toml` + `uv lock`); nota de que `pytest --cov` aplica el umbral del 80% de `pyproject.toml`; paso manual para proteger `main` en GitHub (Settings → Branches → exigir el check de CI antes de fusionar).
   Depende: T4.
   RF: RF-3, RF-9, RF-11; constitución #9/#10.

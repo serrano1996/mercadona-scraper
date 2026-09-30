@@ -16,7 +16,7 @@ Rama `008-search-completeness-pr1`, base `main` con la spec 007 fusionada. Cambi
   RF: RF-1, RF-2, RF-3.
   Hecho cuando: los tests nuevos están en verde y `pytest -q` completo sigue en verde.
 
-- [ ] **T2 — `api/v1/products.py`: fijar a nivel de API la validación y normalización del término**
+- [x] **T2 — `api/v1/products.py`: fijar a nivel de API la validación y normalización del término**
   Sin cambios de producción previstos: la ruta ya recibe `ProductQuery` por `Query()` (verificado en D1 de plan.md que FastAPI ejecuta el validador). Esta tarea fija ese contrato con tests de API.
   RED: `tests/api/test_products.py` — `term=%20%20` ⇒ `422`, y `client.resolve_warehouse` y `client.search` no se llaman (`assert_not_called`); `term=Leche%20` ⇒ `client.search` recibe `term="leche"` y la respuesta lleva `search.term == "leche"` (RF-4).
   GREEN: si algún caso falla, ajustar el modelo de T1 (no debería hacer falta).

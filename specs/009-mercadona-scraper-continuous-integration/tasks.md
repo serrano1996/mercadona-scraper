@@ -15,7 +15,7 @@ Rama `009-continuous-integration`, base `main`. Estimación: **≈80 líneas esc
   RF: RF-1, RF-2, RF-3, RF-5.
   Hecho cuando: `uv.lock` y `.python-version` existen, `uv lock --check` pasa y la suite está en verde en el entorno de `uv` (Python 3.11).
 
-- [ ] **T2 — `pyproject.toml`: umbral de cobertura**
+- [x] **T2 — `pyproject.toml`: umbral de cobertura**
   Añade `[tool.coverage.report]` con `fail_under = 80` (D4).
   RED: con `fail_under = 100` temporal, `uv run pytest -q --cov=app` falla por cobertura (hoy 99%).
   GREEN: con `fail_under = 80`, pasa. `uv lock --check` sigue pasando (las secciones `[tool.*]` no afectan a la resolución).

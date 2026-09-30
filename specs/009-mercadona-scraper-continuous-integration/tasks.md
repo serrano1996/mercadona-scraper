@@ -32,7 +32,7 @@ Rama `009-continuous-integration`, base `main`. Estimación: **≈80 líneas esc
   RF: RF-2, RF-4.
   Hecho cuando: la imagen se construye desde el lock, lleva las versiones del lock sin herramientas de desarrollo y pasa su `HEALTHCHECK`.
 
-- [ ] **T4 — `.github/workflows/ci.yml`**
+- [x] **T4 — `.github/workflows/ci.yml`**
   Workflow con disparadores `push` a `main` y `pull_request` contra `main`; `permissions: contents: read`; `concurrency` por rama con `cancel-in-progress`; un job en `ubuntu-latest` con `actions/checkout@v7`, `astral-sh/setup-uv@v10` (`python-version: "3.11"`, caché activada), `uv sync --locked --extra dev`, y pasos separados `uv run ruff check .`, `uv run ruff format --check .` y `uv run pytest -q --cov=app` (D3).
   RED/GREEN: no se puede ejecutar GitHub Actions en local. Se verifica que el YAML es válido y que cada comando del job, ejecutado a mano en local con el entorno de `uv`, pasa en el mismo orden. La ejecución real en GitHub es T6.
   Depende: T2.

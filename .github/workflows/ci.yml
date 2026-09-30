@@ -1,0 +1,46 @@
+# Spec 009 (continuous integration): lint, format and tests on every push
+# to main and every PR against main, on Python 3.11 (the version the
+# Dockerfile deploys) with dependencies installed only from uv.lock.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# RF-10: read-only; the job needs no secrets (Redis and Mercadona are
+# mocked in the suite with fakeredis/respx).
+permissions:
+  contents: read
+
+# A PR updated several times only keeps its latest run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10
+        with:
+          version: "0.12.10"
+          python-version: "3.11"
+          enable-cache: true
+
+      # --locked: fails if uv.lock is out of sync with pyproject.toml (RF-2).
+      - name: Install dependencies from uv.lock
+        run: uv sync --locked --extra dev
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Format
+        run: uv run ruff format --check .
+
+      # Coverage threshold (80%) comes from pyproject.toml (RF-9).
+      - name: Tests
+        run: uv run pytest -q --cov=app

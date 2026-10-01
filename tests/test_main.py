@@ -5,6 +5,7 @@ dependencies (app/api/v1/products.py) to read."""
 import logging
 from unittest.mock import AsyncMock
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
@@ -72,6 +73,42 @@ def test_mercadona_client_uses_a_pooled_user_agent() -> None:
     with TestClient(app):
         http_client = app.state.mercadona_client._http_client
         assert http_client.headers["User-Agent"] in USER_AGENTS
+
+
+def test_lifespan_wires_default_http_timeout() -> None:
+    """T2 — 010-mercadona-scraper-operational-robustness, RF-4: same 5s as
+    httpx's implicit default, so nothing changes without configuration."""
+    with TestClient(app):
+        assert app.state.mercadona_client._http_client.timeout == httpx.Timeout(5.0)
+
+
+def test_lifespan_wires_configured_http_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("HTTP_TIMEOUT_SECONDS", "2")
+
+    with TestClient(app):
+        assert app.state.mercadona_client._http_client.timeout == httpx.Timeout(2.0)
+
+
+def test_lifespan_gives_redis_client_a_default_timeout() -> None:
+    """T3 — 010-mercadona-scraper-operational-robustness, RF-1: the shared
+    Redis client gets connect and per-operation timeouts. It had none, so
+    a Redis that accepted the connection but never answered hung requests
+    instead of letting the existing RedisError degradation kick in."""
+    with TestClient(app):
+        redis_client = app.state.cache_repository._redis
+        connection_kwargs = redis_client.connection_pool.connection_kwargs
+        assert connection_kwargs["socket_timeout"] == 1.0
+        assert connection_kwargs["socket_connect_timeout"] == 1.0
+        assert app.state.warehouse_cache_repository._redis is redis_client
+
+
+def test_lifespan_applies_configured_redis_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("REDIS_TIMEOUT_SECONDS", "0.3")
+
+    with TestClient(app):
+        connection_kwargs = app.state.cache_repository._redis.connection_pool.connection_kwargs
+        assert connection_kwargs["socket_timeout"] == 0.3
+        assert connection_kwargs["socket_connect_timeout"] == 0.3
 
 
 def test_lifespan_configures_logging(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -225,3 +262,60 @@ def test_unhandled_exception_returns_500_and_logs_traceback(
     # being unreachable — i.e. this test never touches the real Redis at
     # REDIS_URL, even when one is running locally (docker compose up).
     client.search.assert_awaited_once_with(term="leche", warehouse="mad1", page=1, page_size=50)
+
+
+def _cache_with_ping(available: bool) -> AsyncMock:
+    cache = AsyncMock(spec=CacheRepository)
+    cache.ping.return_value = available
+    return cache
+
+
+def test_ready_returns_200_when_redis_answers() -> None:
+    """T5 — 010-mercadona-scraper-operational-robustness, RF-6/RF-7: public
+    (no X-API-Key), like /health."""
+    app.dependency_overrides[get_cache_repository] = lambda: _cache_with_ping(True)
+    try:
+        with TestClient(app) as client:
+            response = client.get("/ready")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ready"}
+
+
+def test_ready_returns_503_without_leaking_redis_details() -> None:
+    """T5 — RF-7: unavailable Redis -> 503 with a fixed body; never the
+    Redis URL (an Upstash URL carries the password)."""
+    app.dependency_overrides[get_cache_repository] = lambda: _cache_with_ping(False)
+    try:
+        with TestClient(app) as client:
+            response = client.get("/ready")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 503
+    assert response.json() == {"status": "unavailable", "redis": "unreachable"}
+    assert "redis://" not in response.text
+    assert "rediss://" not in response.text
+
+
+def test_health_stays_200_when_redis_is_unavailable() -> None:
+    """T5 — RF-8: /health is the Docker liveness probe; an unavailable
+    dependency must not fail it (that is what /ready is for)."""
+    app.dependency_overrides[get_cache_repository] = lambda: _cache_with_ping(False)
+    try:
+        with TestClient(app) as client:
+            response = client.get("/health")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
+def test_openapi_documents_ready() -> None:
+    with TestClient(app) as client:
+        paths = client.get("/openapi.json").json()["paths"]
+
+    assert "/ready" in paths

@@ -29,6 +29,19 @@ class CacheRepository:
         except RedisError:
             logger.warning("Redis unavailable, skipping cache write for key %s", key)
 
+    async def ping(self) -> bool:
+        """Whether Redis answers a PING within the client's timeout (spec 010
+        RF-6/RF-7, Decision D3). Any RedisError, including a timeout, is
+        False, never raised. Logs only the error type (Decision D5):
+        redis-py messages can include the host, and an Upstash URL carries
+        the password."""
+        try:
+            await self._redis.ping()
+        except RedisError as exc:
+            logger.warning("Redis ping failed: %s", type(exc).__name__)
+            return False
+        return True
+
 
 @dataclass(frozen=True)
 class CachedWarehouse:

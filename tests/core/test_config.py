@@ -111,3 +111,38 @@ def test_warehouse_ttl_env_overrides_defaults(
 
     assert settings.WAREHOUSE_CACHE_TTL_SECONDS == 120
     assert settings.WAREHOUSE_NEGATIVE_CACHE_TTL_SECONDS == 30
+
+
+def test_timeout_defaults(required_env: None) -> None:
+    """T1 — 010-mercadona-scraper-operational-robustness, RF-1/RF-4: Redis
+    gets a 1s timeout (it had none: a hung Redis hung the request), HTTP
+    keeps httpx's implicit 5s, now explicit."""
+    settings = Settings()
+
+    assert settings.REDIS_TIMEOUT_SECONDS == 1.0
+    assert settings.HTTP_TIMEOUT_SECONDS == 5.0
+
+
+def test_timeouts_env_overrides_defaults(
+    required_env: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("REDIS_TIMEOUT_SECONDS", "0.3")
+    monkeypatch.setenv("HTTP_TIMEOUT_SECONDS", "2.5")
+
+    settings = Settings()
+
+    assert settings.REDIS_TIMEOUT_SECONDS == 0.3
+    assert settings.HTTP_TIMEOUT_SECONDS == 2.5
+
+
+@pytest.mark.parametrize("variable", ["REDIS_TIMEOUT_SECONDS", "HTTP_TIMEOUT_SECONDS"])
+@pytest.mark.parametrize("value", ["0", "-1"])
+def test_non_positive_timeouts_are_rejected(
+    required_env: None, monkeypatch: pytest.MonkeyPatch, variable: str, value: str
+) -> None:
+    """T1 — spec 010 casos límite: a zero or negative timeout fails fast at
+    startup, like any other invalid setting."""
+    monkeypatch.setenv(variable, value)
+
+    with pytest.raises(ValidationError):
+        Settings()

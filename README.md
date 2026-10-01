@@ -104,6 +104,8 @@ Configuradas vía `.env` (ver `.env.example`) o variables de entorno reales — 
 | `CACHE_TTL_SECONDS`     |     No      | `3600`   | TTL de las entradas de cache de búsqueda                                     |
 | `WAREHOUSE_CACHE_TTL_SECONDS` | No    | `86400`  | TTL de la resolución `postal_code → almacén` en cache                        |
 | `WAREHOUSE_NEGATIVE_CACHE_TTL_SECONDS` | No | `3600` | TTL de un `postal_code` cacheado como "sin servicio" (404 de Mercadona)      |
+| `REDIS_TIMEOUT_SECONDS` | No | `1.0` | Tiempo límite (s) para conectar con Redis y para cada operación; si se supera, se sigue sin cache |
+| `HTTP_TIMEOUT_SECONDS` | No | `5.0` | Tiempo límite (s) de cada petición a Mercadona/Algolia (conexión, lectura, escritura) |
 | `RETRY_MAX_ATTEMPTS`    |     No      | `3`      | Intentos máximos por petición saliente a Mercadona/Algolia                   |
 | `RETRY_BASE_DELAY`      |     No      | `0.5`    | Delay base (segundos) del backoff exponencial entre reintentos               |
 | `RETRY_JITTER_MAX_S`    |     No      | `0.3`    | Jitter aleatorio máximo (segundos) añadido a cada delay de reintento         |
@@ -111,7 +113,16 @@ Configuradas vía `.env` (ver `.env.example`) o variables de entorno reales — 
 
 ## Uso de la API
 
-Todos los endpoints bajo `/api/v1/` requieren la cabecera `X-API-Key` con uno de los tokens configurados en `API_KEYS`. `/docs`, `/openapi.json` y `/health` quedan públicos.
+Todos los endpoints bajo `/api/v1/` requieren la cabecera `X-API-Key` con uno de los tokens configurados en `API_KEYS`. `/docs`, `/openapi.json`, `/health` y `/ready` quedan públicos.
+
+### `/health` y `/ready`
+
+| Endpoint | Pregunta que responde | Respuesta |
+| -------- | --------------------- | --------- |
+| `GET /health` | ¿Está vivo el proceso? No comprueba dependencias. | Siempre `200 {"status": "ok"}` |
+| `GET /ready` | ¿Puede esta instancia usar Redis? Hace `PING` con el tiempo límite de `REDIS_TIMEOUT_SECONDS`. | `200 {"status": "ready"}`, o `503 {"status": "unavailable", "redis": "unreachable"}` |
+
+El `HEALTHCHECK` de Docker usa `/health`: un Redis caído no debe hacer que se reinicie un proceso sano, porque la API sigue funcionando sin cache. `/ready` sirve para saber si la instancia está sirviendo con cache. No comprueba Mercadona: una caída de un tercero marcaría a la vez todas las instancias como no listas. La respuesta `503` nunca incluye la URL de Redis ni el detalle del error (una URL de Upstash lleva la contraseña).
 
 ```bash
 curl -H "X-API-Key: <tu-token>" \
@@ -241,8 +252,10 @@ Specs completas:
 | `007-mercadona-scraper-warehouse-resolution` | Resolución real `postal_code → almacén` vía Mercadona, cache Redis con TTL propio, clave de cache de productos por almacén |
 | `008-mercadona-scraper-search-completeness` | Total real de resultados, paginación (`page`, `page_size`), validación y normalización del término |
 | `009-mercadona-scraper-continuous-integration` | CI en GitHub Actions con Python 3.11, `uv.lock` compartido con la imagen Docker, umbral de cobertura del 80% |
+| `010-mercadona-scraper-operational-robustness` | Tiempos límite configurables de Redis y HTTP, degradación sin cache ante un Redis que no responde, endpoint `/ready` |
 
 ## Limitaciones conocidas
 
 - **Sin rotación de IP/proxy:** decisión explícita, fuera de alcance del proyecto (ver `specs/002-mercadona-scraper-antibaneo/spec.md`).
+- **Latencia añadida con Redis colgado:** si Redis acepta la conexión pero no responde, cada búsqueda hace hasta cuatro operaciones de cache que esperan `REDIS_TIMEOUT_SECONDS` cada una antes de seguir sin cache, así que puede tardar hasta unas cuatro veces ese valor más la llamada a Mercadona (unos 4 s con el valor por defecto). No hay *circuit breaker* que deje de intentarlo tras varios fallos (ver `specs/010-mercadona-scraper-operational-robustness/spec.md`).
 - **Cache de credenciales en memoria de proceso:** no se comparte entre réplicas si el servicio se despliega con más de una instancia; cada una vuelve a extraerlas tras un reinicio.

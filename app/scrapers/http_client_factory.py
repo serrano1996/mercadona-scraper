@@ -37,12 +37,16 @@ _ORIGIN = "https://tienda.mercadona.es"
 _REFERER = "https://tienda.mercadona.es/"
 
 
-def build_mercadona_http_client() -> httpx.AsyncClient:
+def build_mercadona_http_client(timeout_seconds: float) -> httpx.AsyncClient:
+    """`timeout_seconds` applies to connect, read, write and pool waits
+    (spec 010 RF-4, Decision D2 in plan.md); taken as a plain number so
+    this module stays independent of Settings."""
     return httpx.AsyncClient(
+        timeout=httpx.Timeout(timeout_seconds),
         headers={
             "User-Agent": random.choice(USER_AGENTS),
             "Accept-Language": _ACCEPT_LANGUAGE,
             "Referer": _REFERER,
             "Origin": _ORIGIN,
-        }
+        },
     )

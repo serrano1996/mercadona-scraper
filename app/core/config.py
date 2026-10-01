@@ -1,4 +1,4 @@
-from pydantic import computed_field
+from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -22,6 +22,12 @@ class Settings(BaseSettings):
     # picked up sooner.
     WAREHOUSE_CACHE_TTL_SECONDS: int = 86400
     WAREHOUSE_NEGATIVE_CACHE_TTL_SECONDS: int = 3600
+    # Timeouts (spec 010 RF-1/RF-4). Redis had none: a Redis that accepted
+    # the connection but never answered hung the request forever instead
+    # of degrading to "no cache". One value for connect and per-operation
+    # timeouts. HTTP keeps httpx's implicit 5s default, now explicit.
+    REDIS_TIMEOUT_SECONDS: float = Field(default=1.0, gt=0)
+    HTTP_TIMEOUT_SECONDS: float = Field(default=5.0, gt=0)
 
     @computed_field  # type: ignore[prop-decorator]
     @property

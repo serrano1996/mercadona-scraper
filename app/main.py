@@ -1,6 +1,7 @@
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import Annotated
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -8,6 +9,7 @@ from redis.asyncio import Redis
 
 from app.api.v1.products import router as products_router
 from app.core.config import Settings
+from app.core.dependencies import get_cache_repository
 from app.core.logging_config import configure_logging
 from app.core.security import verify_api_key
 from app.middleware.request_logging import RequestLoggingMiddleware
@@ -22,8 +24,15 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = Settings()
     configure_logging(settings.LOG_LEVEL)
-    http_client = build_mercadona_http_client()
-    redis_client = Redis.from_url(settings.REDIS_URL)
+    http_client = build_mercadona_http_client(settings.HTTP_TIMEOUT_SECONDS)
+    # Without these, a Redis that accepts the connection but never answers
+    # hangs the request instead of raising RedisError, which the cache
+    # repositories already turn into "no cache" (spec 010 RF-1/RF-2).
+    redis_client = Redis.from_url(
+        settings.REDIS_URL,
+        socket_timeout=settings.REDIS_TIMEOUT_SECONDS,
+        socket_connect_timeout=settings.REDIS_TIMEOUT_SECONDS,
+    )
 
     app.state.settings = settings
     app.state.cache_repository = CacheRepository(redis_client)
@@ -44,6 +53,23 @@ app.include_router(products_router, prefix="/api/v1", dependencies=[Depends(veri
 @app.get("/health")
 async def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get(
+    "/ready",
+    responses={503: {"description": "Redis is unreachable within REDIS_TIMEOUT_SECONDS"}},
+)
+async def ready(
+    cache: Annotated[CacheRepository, Depends(get_cache_repository)],
+) -> JSONResponse:
+    """Readiness, as opposed to /health's liveness (spec 010 RF-6-RF-8): can
+    this instance use its own dependency, Redis? Public like /health.
+    Mercadona is deliberately not checked: a third-party outage would mark
+    every instance not ready at once. The 503 body is fixed, never the
+    Redis URL or error (an Upstash URL carries the password)."""
+    if await cache.ping():
+        return JSONResponse(status_code=200, content={"status": "ready"})
+    return JSONResponse(status_code=503, content={"status": "unavailable", "redis": "unreachable"})
 
 
 @app.exception_handler(Exception)

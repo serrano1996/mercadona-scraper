@@ -22,7 +22,7 @@ Rama `010-operational-robustness`, base `main`. Estimación: **≈250 líneas** 
   RF: RF-4, RF-5.
   Hecho cuando: los tests nuevos y actualizados están en verde y la suite completa sigue en verde.
 
-- [ ] **T3 — `main.py`: timeouts en el cliente de Redis**
+- [x] **T3 — `main.py`: timeouts en el cliente de Redis**
   `Redis.from_url(settings.REDIS_URL, socket_timeout=t, socket_connect_timeout=t)` con `t = settings.REDIS_TIMEOUT_SECONDS` (D1).
   RED: `tests/test_main.py` — tras el `lifespan`, el cliente de Redis de `app.state.cache_repository` tiene `connection_pool.connection_kwargs["socket_timeout"] == 1.0` y `["socket_connect_timeout"] == 1.0` por defecto, y `0.3` con `REDIS_TIMEOUT_SECONDS=0.3`; `app.state.warehouse_cache_repository` comparte ese mismo cliente.
   GREEN: pasa los dos argumentos.

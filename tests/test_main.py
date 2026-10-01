@@ -89,6 +89,28 @@ def test_lifespan_wires_configured_http_timeout(monkeypatch: pytest.MonkeyPatch)
         assert app.state.mercadona_client._http_client.timeout == httpx.Timeout(2.0)
 
 
+def test_lifespan_gives_redis_client_a_default_timeout() -> None:
+    """T3 — 010-mercadona-scraper-operational-robustness, RF-1: the shared
+    Redis client gets connect and per-operation timeouts. It had none, so
+    a Redis that accepted the connection but never answered hung requests
+    instead of letting the existing RedisError degradation kick in."""
+    with TestClient(app):
+        redis_client = app.state.cache_repository._redis
+        connection_kwargs = redis_client.connection_pool.connection_kwargs
+        assert connection_kwargs["socket_timeout"] == 1.0
+        assert connection_kwargs["socket_connect_timeout"] == 1.0
+        assert app.state.warehouse_cache_repository._redis is redis_client
+
+
+def test_lifespan_applies_configured_redis_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("REDIS_TIMEOUT_SECONDS", "0.3")
+
+    with TestClient(app):
+        connection_kwargs = app.state.cache_repository._redis.connection_pool.connection_kwargs
+        assert connection_kwargs["socket_timeout"] == 0.3
+        assert connection_kwargs["socket_connect_timeout"] == 0.3
+
+
 def test_lifespan_configures_logging(monkeypatch: pytest.MonkeyPatch) -> None:
     """T3 — 003-mercadona-scaper-logging: main.py's lifespan calls
     configure_logging(settings.LOG_LEVEL) (spec.md RF-1)."""

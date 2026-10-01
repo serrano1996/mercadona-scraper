@@ -23,7 +23,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = Settings()
     configure_logging(settings.LOG_LEVEL)
     http_client = build_mercadona_http_client(settings.HTTP_TIMEOUT_SECONDS)
-    redis_client = Redis.from_url(settings.REDIS_URL)
+    # Without these, a Redis that accepts the connection but never answers
+    # hangs the request instead of raising RedisError, which the cache
+    # repositories already turn into "no cache" (spec 010 RF-1/RF-2).
+    redis_client = Redis.from_url(
+        settings.REDIS_URL,
+        socket_timeout=settings.REDIS_TIMEOUT_SECONDS,
+        socket_connect_timeout=settings.REDIS_TIMEOUT_SECONDS,
+    )
 
     app.state.settings = settings
     app.state.cache_repository = CacheRepository(redis_client)

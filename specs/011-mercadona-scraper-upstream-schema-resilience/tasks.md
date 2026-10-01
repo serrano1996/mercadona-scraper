@@ -42,7 +42,8 @@ Rama `011-upstream-schema-resilience`, base `main`. Estimación: **≈320 línea
   RF: RF-3, RF-4.
   Hecho cuando: el test de servicio y los seis casos de T1 están en verde sin ninguna marca `xfail`, y la suite completa en verde.
 
-- [ ] **T5 — Docs, lint, cobertura y CI**
+- [x] **T5 — Docs, lint, cobertura y CI**
+  **Resultado (2026-10-01):** README actualizado; `ruff` limpio; 256 tests, cobertura 99,59% (se añadió un test para la rama de recorte del log a cinco errores, que había quedado sin cubrir). Contra Algolia real, `leche` en `products_prod_mad1_es` valida con `RawAlgoliaResponse` **con y sin** `attributesToRetrieve=*` (50 resultados, `nbHits` 233); antes, sin ese parámetro, fallaban los 50. CI del PR en verde.
   `README.md`, en "Limitaciones conocidas": la API depende solo de siete campos de Mercadona (`id`, `display_name`, `thumbnail`, `categories[].name`, `price_instructions.unit_price`, `bulk_price`, `reference_format`); un cambio en cualquier otro se ignora, un cambio en uno de estos da `502` y un `WARNING` con la ruta del campo; fila de la spec 011 en la tabla de specs. `uv run ruff check .`, `uv run ruff format --check .` y `uv run pytest -q --cov=app` (≥80%). Verificación contra Algolia real (una consulta, con y sin `attributesToRetrieve=*`): los resultados de `leche` validan con el modelo nuevo. PR con la CI de GitHub en verde.
   Depende: T4.
   RF: criterios de finalización de spec.md; constitución #9/#10.

@@ -329,3 +329,19 @@ async def test_search_rejects_a_hit_with_a_broken_used_field_without_logging_its
     assert "results.0.hits.0.price_instructions.unit_price" in warnings[0]
     assert "float_parsing" in warnings[0]
     assert "PRICE-abc-123" not in warnings[0]
+
+
+async def test_invalid_response_log_is_capped_at_five_errors(
+    settings: Settings, caplog: pytest.LogCaptureFixture
+) -> None:
+    """T5 — 011, Decision D5: a response where many hits are broken logs the
+    first five errors and a count of the rest, not an unbounded line."""
+    hit = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
+    del hit["price_instructions"]["unit_price"]
+
+    with caplog.at_level(logging.WARNING), pytest.raises(AlgoliaResponseInvalid):
+        await _search_with_algolia_body(settings, json=algolia_response([hit] * 8))
+
+    warning = next(r.getMessage() for r in caplog.records if r.levelno == logging.WARNING)
+    assert warning.count("unit_price: missing") == 5
+    assert "... 3 more" in warning

@@ -53,13 +53,14 @@ Rama `010-operational-robustness`, base `main`. Estimación: **≈250 líneas** 
   RF: RF-2, RF-3, RF-7, RF-8; H1, H3.
   Hecho cuando: el fichero está en verde, se ha comprobado que falla sin los timeouts de T3, y la suite completa sigue en verde.
 
-- [ ] **T7 — Docs vivas: `README.md` y `.env.example`**
+- [x] **T7 — Docs vivas: `README.md` y `.env.example`**
   `README.md`: `REDIS_TIMEOUT_SECONDS` y `HTTP_TIMEOUT_SECONDS` en la tabla de variables; `/ready` en "Uso de la API" (qué comprueba, `200`/`503`, que es público) y la diferencia con `/health` (vida frente a disponibilidad; el `HEALTHCHECK` de Docker sigue usando `/health`); en "Limitaciones conocidas", la latencia máxima añadida con Redis colgado (hasta unas cuatro veces `REDIS_TIMEOUT_SECONDS` por búsqueda); fila de la spec 010. `.env.example`: `REDIS_TIMEOUT_SECONDS=1.0` y `HTTP_TIMEOUT_SECONDS=5.0` — **lo añade el usuario** (fichero bloqueado por permisos para el agente).
   Depende: T6.
   RF: constitución #9/#10 (docs vivas).
   Hecho cuando: el README recoge los cuatro puntos y el usuario confirma `.env.example`.
 
-- [ ] **T8 — Lint, cobertura y verificación final**
+- [x] **T8 — Lint, cobertura y verificación final**
+  **Resultado (2026-10-01):** `ruff check`/`ruff format --check` limpios; 238 tests, cobertura 99,63% (todos los ficheros tocados al 100%); CI del PR #3 en verde. Verificación manual en el contenedor Docker con Redis en una IP no enrutable (`10.255.255.1`) y Mercadona en un puerto cerrado del contenedor: `/health` 200 (0,08 s), `/ready` 503 (1,05 s), búsqueda 502 en 1,55 s (termina), y el contenedor sigue `healthy` (RF-8). Logs sin la URL de Redis (`Redis ping failed: TimeoutError`). La misma prueba con `uvicorn` en Windows tardó 7,81 s en la búsqueda porque Windows tarda ~2 s en rechazar cada conexión a un puerto local cerrado; en Linux es instantáneo.
   `uv run ruff check .` y `uv run ruff format --check .` limpios; `uv run pytest -q --cov=app` en verde con cobertura ≥80%. Verificación manual con Docker: contenedor con `REDIS_URL` apuntando a un host inaccesible ⇒ `/health` `200`, `/ready` `503`, y `GET /api/v1/products` (con `X-API-Key`) responde sin colgarse (`502` si Mercadona no es alcanzable desde el contenedor, o `200`; lo que importa es que **termina**). CI de GitHub en verde en el PR.
   Depende: T7.
   RF: criterios de finalización de spec.md.

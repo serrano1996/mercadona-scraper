@@ -14,7 +14,11 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from app.models.mercadona_raw import RawAlgoliaProduct, RawAlgoliaSearchResult
+from app.models.mercadona_raw import (
+    RawAlgoliaProduct,
+    RawAlgoliaResponse,
+    RawAlgoliaSearchResult,
+)
 from tests.fixtures.algolia import algolia_response
 
 ALGOLIA_HIT_FIXTURE_PATH = (
@@ -121,3 +125,10 @@ def test_raw_algolia_search_result_requires_totals(missing_field: str) -> None:
 
     with pytest.raises(ValidationError):
         RawAlgoliaSearchResult.model_validate(payload)
+
+
+def test_raw_algolia_response_requires_at_least_one_result() -> None:
+    """T3 — 011, Decision D3: `results` must not be empty, so the client
+    never indexes into an empty list."""
+    with pytest.raises(ValidationError):
+        RawAlgoliaResponse.model_validate({"results": []})

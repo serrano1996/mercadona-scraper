@@ -26,7 +26,7 @@ Rama `011-upstream-schema-resilience`, base `main`. Estimación: **≈320 línea
   RF: RF-1, RF-2, RF-3.
   Hecho cuando: los tests de modelo están en verde, los cuatro casos de T1 sin marca y en verde, el caso de `unit_price` sigue en `xfail`, y la suite completa en verde.
 
-- [ ] **T3 — `mercadona_client.py`: `RawAlgoliaResponse` + `AlgoliaResponseInvalid` + log**
+- [x] **T3 — `mercadona_client.py`: `RawAlgoliaResponse` + `AlgoliaResponseInvalid` + log**
   `RawAlgoliaResponse(results: list[RawAlgoliaSearchResult] = Field(min_length=1))` en `mercadona_raw.py`. `MercadonaClient.search` valida `response.content` con `RawAlgoliaResponse.model_validate_json` y devuelve `results[0]`; ante `ValidationError` registra un `WARNING` con, por cada error (máximo cinco), `loc` unido con puntos y `type`, nunca `str(exc)`, `msg` ni `input`, y lanza `AlgoliaResponseInvalid` (nueva, junto a `WarehouseHeaderMissing`) (D3, D4, D5).
   RED: `tests/scrapers/test_mercadona_client.py` — hit sin `unit_price` ⇒ `AlgoliaResponseInvalid`; cuerpos `not json`, `{}` y `{"results": []}` ⇒ `AlgoliaResponseInvalid`; con `unit_price = "PRICE-abc-123"` el `WARNING` contiene `unit_price` y `float_parsing` y **no** contiene `PRICE-abc-123`. `tests/models/test_mercadona_raw.py` — `RawAlgoliaResponse` con `{"results": []}` ⇒ `ValidationError`.
   GREEN: implementa el modelo, la excepción, la validación y el log.

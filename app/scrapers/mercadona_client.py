@@ -20,9 +20,10 @@ from email.utils import parsedate_to_datetime
 from urllib.parse import quote
 
 import httpx
+from pydantic import ValidationError
 
 from app.core.config import Settings
-from app.models.mercadona_raw import RawAlgoliaSearchResult
+from app.models.mercadona_raw import RawAlgoliaResponse, RawAlgoliaSearchResult
 
 logger = logging.getLogger(__name__)
 
@@ -91,6 +92,31 @@ class WarehouseHeaderMissing(Exception):
     RF-10, Decision D4 in plan.md)."""
 
 
+class AlgoliaResponseInvalid(Exception):
+    """Raised when Algolia answers 2xx with a body that isn't a valid search
+    response, or with a hit missing a field the API maps — a break in
+    Mercadona's contract, mapped to 502 by the service (spec 011 RF-3/RF-4,
+    Decision D4)."""
+
+
+_MAX_LOGGED_VALIDATION_ERRORS = 5
+
+
+def _describe_validation_error(exc: ValidationError) -> str:
+    """Field paths and error types only, e.g.
+    "results.0.hits.3.price_instructions.unit_price: float_parsing".
+    Never str(exc), `msg` or `input`: they carry Mercadona's data (spec 011
+    RF-5, Decision D5)."""
+    errors = exc.errors()
+    described = [
+        f"{'.'.join(str(part) for part in error['loc']) or '<body>'}: {error['type']}"
+        for error in errors[:_MAX_LOGGED_VALIDATION_ERRORS]
+    ]
+    if len(errors) > _MAX_LOGGED_VALIDATION_ERRORS:
+        described.append(f"... {len(errors) - _MAX_LOGGED_VALIDATION_ERRORS} more")
+    return "; ".join(described)
+
+
 class MercadonaClient:
     def __init__(self, http_client: httpx.AsyncClient, settings: Settings) -> None:
         self._http_client = http_client
@@ -155,7 +181,15 @@ class MercadonaClient:
                 app_id, api_key, index_prefix, term, warehouse, page, page_size
             )
         response.raise_for_status()
-        return RawAlgoliaSearchResult.model_validate(response.json()["results"][0])
+        try:
+            body = RawAlgoliaResponse.model_validate_json(response.content)
+        except ValidationError as exc:
+            logger.warning(
+                "Algolia returned an invalid search response: %s",
+                _describe_validation_error(exc),
+            )
+            raise AlgoliaResponseInvalid("Algolia search response failed validation") from exc
+        return body.results[0]
 
     async def _search_algolia(
         self,

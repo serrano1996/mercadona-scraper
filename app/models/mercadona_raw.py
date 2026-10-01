@@ -15,7 +15,7 @@ app/models/product.py + app/mappers/), so a Mercadona-side rename doesn't
 break our contract silently.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class RawPriceInstructions(BaseModel):
@@ -62,3 +62,12 @@ class RawAlgoliaSearchResult(BaseModel):
     hits: list[RawAlgoliaProduct]
     nbHits: int
     nbPages: int
+
+
+class RawAlgoliaResponse(BaseModel):
+    """The whole body of Algolia's /queries endpoint (spec 011 RF-4,
+    Decision D3). Validating it in one step turns every malformed shape —
+    not JSON, no `results`, an empty `results`, missing totals — into a
+    single ValidationError instead of KeyError/IndexError/JSON errors."""
+
+    results: list[RawAlgoliaSearchResult] = Field(min_length=1)

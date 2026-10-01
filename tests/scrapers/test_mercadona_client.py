@@ -10,11 +10,14 @@ from pathlib import Path
 import httpx
 import pytest
 import respx
-from pydantic import ValidationError
 
 from app.core.config import Settings
 from app.models.mercadona_raw import RawAlgoliaSearchResult
-from app.scrapers.mercadona_client import AlgoliaCredentialsUnavailable, MercadonaClient
+from app.scrapers.mercadona_client import (
+    AlgoliaCredentialsUnavailable,
+    AlgoliaResponseInvalid,
+    MercadonaClient,
+)
 from tests.fixtures.algolia import algolia_response
 
 FIXTURE_PATH = Path(__file__).parent.parent / "fixtures" / "mercadona_algolia_hit_sample.json"
@@ -274,5 +277,55 @@ async def test_search_fails_loudly_without_algolia_totals(settings: Settings) ->
 
         async with httpx.AsyncClient() as http_client:
             client = MercadonaClient(http_client, settings)
-            with pytest.raises(ValidationError):
+            with pytest.raises(AlgoliaResponseInvalid):
                 await client.search(term="leche", warehouse="mad1", page=1, page_size=50)
+
+
+async def _search_with_algolia_body(settings: Settings, **response_kwargs: object) -> None:
+    with respx.mock(assert_all_called=True) as mock:
+        _mock_credentials(mock)
+        mock.post(f"https://{FAKE_APP_ID}-dsn.algolia.net/1/indexes/*/queries").mock(
+            return_value=httpx.Response(200, **response_kwargs)
+        )
+        async with httpx.AsyncClient() as http_client:
+            client = MercadonaClient(http_client, settings)
+            await client.search(term="leche", warehouse="mad1", page=1, page_size=50)
+
+
+@pytest.mark.parametrize(
+    "response_kwargs",
+    [
+        {"content": b"not json"},
+        {"json": {}},
+        {"json": {"results": []}},
+        {"json": {"results": [{"hits": []}]}},
+    ],
+    ids=["not-json", "no-results", "empty-results", "no-totals"],
+)
+async def test_search_rejects_a_malformed_algolia_body(
+    settings: Settings, response_kwargs: dict[str, object]
+) -> None:
+    """T3 — 011-mercadona-scraper-upstream-schema-resilience, RF-4: any body
+    that is not a valid Algolia search response is the same domain error,
+    instead of KeyError/IndexError/JSON errors surfacing as 500."""
+    with pytest.raises(AlgoliaResponseInvalid):
+        await _search_with_algolia_body(settings, **response_kwargs)
+
+
+async def test_search_rejects_a_hit_with_a_broken_used_field_without_logging_its_value(
+    settings: Settings, caplog: pytest.LogCaptureFixture
+) -> None:
+    """T3 — RF-3, RF-5, Decision D5: the warning names the field path and
+    the error type only. str(ValidationError) carries the received value
+    (input_value=...), so it must never reach the log."""
+    hit = json.loads(FIXTURE_PATH.read_text(encoding="utf-8"))
+    hit["price_instructions"]["unit_price"] = "PRICE-abc-123"
+
+    with caplog.at_level(logging.WARNING), pytest.raises(AlgoliaResponseInvalid):
+        await _search_with_algolia_body(settings, json=algolia_response([hit]))
+
+    warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
+    assert len(warnings) == 1
+    assert "results.0.hits.0.price_instructions.unit_price" in warnings[0]
+    assert "float_parsing" in warnings[0]
+    assert "PRICE-abc-123" not in warnings[0]

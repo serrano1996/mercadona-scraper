@@ -14,7 +14,7 @@ def map_raw_algolia_product_to_product_out(raw: RawAlgoliaProduct) -> ProductOut
     return ProductOut(
         id=raw.id,
         name=raw.display_name,
-        price=float(raw.price_instructions.unit_price),
+        price=raw.price_instructions.unit_price,
         price_format=_build_price_format(raw.price_instructions),
         image_url=raw.thumbnail,
         category=category,

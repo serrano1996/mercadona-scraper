@@ -7,7 +7,7 @@ from app.exceptions import PageOutOfRangeError, UpstreamUnavailableError
 from app.mappers.product_mapper import map_raw_algolia_product_to_product_out
 from app.models.product import ProductSearchResponse, SearchMeta
 from app.models.query import ProductQuery
-from app.scrapers.mercadona_client import MercadonaClient
+from app.scrapers.mercadona_client import AlgoliaResponseInvalid, MercadonaClient
 from app.services.cache import CacheRepository
 
 _STRATEGY_USED = "algolia"
@@ -48,6 +48,11 @@ async def search_products(
                 f"Mercadona/Algolia returned {exc.response.status_code}"
             ) from exc
         raise
+    except AlgoliaResponseInvalid as exc:
+        # Mercadona broke the contract of a field we map: an upstream
+        # failure (502), raised before anything is cached (spec 011
+        # RF-3/RF-4, Decision D4).
+        raise UpstreamUnavailableError("Mercadona/Algolia returned an invalid response") from exc
     if query.page > 1 and not result.hits:
         # Algolia answers an out-of-range page with nbHits 0, so the total
         # can't tell "no results" from "past the last page" (spec 008 RF-9,

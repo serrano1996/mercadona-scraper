@@ -253,9 +253,11 @@ Specs completas:
 | `008-mercadona-scraper-search-completeness` | Total real de resultados, paginación (`page`, `page_size`), validación y normalización del término |
 | `009-mercadona-scraper-continuous-integration` | CI en GitHub Actions con Python 3.11, `uv.lock` compartido con la imagen Docker, umbral de cobertura del 80% |
 | `010-mercadona-scraper-operational-robustness` | Tiempos límite configurables de Redis y HTTP, degradación sin cache ante un Redis que no responde, endpoint `/ready` |
+| `011-mercadona-scraper-upstream-schema-resilience` | Validación solo de los campos de Mercadona que usa la API; respuesta rota de Algolia ⇒ `502` en vez de `500` |
 
 ## Limitaciones conocidas
 
 - **Sin rotación de IP/proxy:** decisión explícita, fuera de alcance del proyecto (ver `specs/002-mercadona-scraper-antibaneo/spec.md`).
+- **Dependencia de siete campos de Mercadona:** la API solo valida lo que usa de cada resultado de Algolia: `id`, `display_name`, `thumbnail`, `categories[].name` y, de `price_instructions`, `unit_price`, `bulk_price` y `reference_format`. Un cambio de Mercadona en cualquier otro campo se ignora. Si cambia uno de estos siete, o la respuesta no tiene la estructura esperada, la búsqueda responde `502` (no `500`) y se registra un `WARNING` con la ruta del campo y el tipo de error, sin los datos recibidos (ver `specs/011-mercadona-scraper-upstream-schema-resilience/spec.md`). Un solo producto con uno de esos campos roto deja toda la búsqueda en `502`.
 - **Latencia añadida con Redis colgado:** si Redis acepta la conexión pero no responde, cada búsqueda hace hasta cuatro operaciones de cache que esperan `REDIS_TIMEOUT_SECONDS` cada una antes de seguir sin cache, así que puede tardar hasta unas cuatro veces ese valor más la llamada a Mercadona (unos 4 s con el valor por defecto). No hay *circuit breaker* que deje de intentarlo tras varios fallos (ver `specs/010-mercadona-scraper-operational-robustness/spec.md`).
 - **Cache de credenciales en memoria de proceso:** no se comparte entre réplicas si el servicio se despliega con más de una instancia; cada una vuelve a extraerlas tras un reinicio.

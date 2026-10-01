@@ -1,6 +1,6 @@
-"""T12 (mapper prerequisite) — product_mapper maps RawAlgoliaProduct ->
-ProductOut, same price_format nullability rule as T6's
-map_raw_product_to_product_out (spec.md caso limite "sin precio por unidad")."""
+"""product_mapper maps RawAlgoliaProduct -> ProductOut; price_format is
+None when the per-unit price is missing (spec 001 caso limite "sin precio
+por unidad")."""
 
 import json
 from pathlib import Path

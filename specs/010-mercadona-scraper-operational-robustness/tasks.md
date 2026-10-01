@@ -46,7 +46,7 @@ Rama `010-operational-robustness`, base `main`. Estimación: **≈250 líneas** 
   RF: RF-6, RF-7, RF-8.
   Hecho cuando: los tests nuevos están en verde y la suite completa sigue en verde.
 
-- [ ] **T6 — Integración: `tests/integration/test_redis_unresponsive.py`**
+- [x] **T6 — Integración: `tests/integration/test_redis_unresponsive.py`**
   Fixture propio (sin el reemplazo de `app.main.Redis` por `fakeredis` del `conftest`): servidor TCP en `127.0.0.1` con `asyncio.start_server` que acepta conexiones y nunca responde; `REDIS_URL` apuntando a él y `REDIS_TIMEOUT_SECONDS=0.2`; app real con su `lifespan`; `change-pc` y Algolia con `respx` (`mock_change_pc`, `algolia_response`) (D4).
   RED/GREEN: `GET /api/v1/products?postal_code=28001&term=leche` ⇒ `200` con productos en menos de 3 s, y al menos un `WARNING` de Redis no disponible en `caplog`; `GET /ready` ⇒ `503`; `GET /health` ⇒ `200`. Verificar que el test **falla sin T3** (con el cliente de Redis sin timeouts, la búsqueda no termina en 3 s) y pasa con T3.
   Depende: T3, T5.

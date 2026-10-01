@@ -10,7 +10,7 @@ import pytest
 from app.core.config import Settings
 from app.exceptions import UpstreamUnavailableError
 from app.models.query import ProductQuery
-from app.scrapers.mercadona_client import MercadonaClient
+from app.scrapers.mercadona_client import AlgoliaResponseInvalid, MercadonaClient
 from app.services.cache import CacheRepository
 from app.services.product_search import search_products
 
@@ -80,6 +80,25 @@ async def test_raises_domain_error_after_429_retries_exhausted() -> None:
     cache.get.return_value = None
     client = AsyncMock(spec=MercadonaClient)
     client.search.side_effect = _http_status_error(429)
+    query = ProductQuery(postal_code="28001", term="leche")
+
+    with pytest.raises(UpstreamUnavailableError):
+        await search_products(
+            query, warehouse="mad1", cache=cache, client=client, settings=_settings()
+        )
+
+    cache.set.assert_not_called()
+
+
+async def test_invalid_algolia_response_becomes_upstream_unavailable_without_caching() -> None:
+    """T4 — 011-mercadona-scraper-upstream-schema-resilience, RF-3/RF-4:
+    Mercadona breaking the contract of a field the API needs is an
+    upstream failure (502 at the route), like an exhausted 5xx, and the
+    failed search is never cached."""
+    cache = AsyncMock(spec=CacheRepository)
+    cache.get.return_value = None
+    client = AsyncMock(spec=MercadonaClient)
+    client.search.side_effect = AlgoliaResponseInvalid("Algolia search response failed validation")
     query = ProductQuery(postal_code="28001", term="leche")
 
     with pytest.raises(UpstreamUnavailableError):

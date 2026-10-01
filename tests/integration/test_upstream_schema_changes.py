@@ -53,14 +53,6 @@ def _mock_upstream(respx_mock: respx.MockRouter, mutate: Mutation) -> respx.Rout
     )
 
 
-# Strict: documents the target behavior without breaking the suite, and
-# fails with XPASS(strict) as soon as a task fixes the case, forcing that
-# task to remove the mark (tasks.md 011).
-_FAILS_TODAY = pytest.mark.xfail(
-    strict=True, reason="spec 011: unvalidated upstream change, 500 today"
-)
-
-
 def _unchanged(hit: dict[str, dict[str, object]]) -> None:
     pass
 
@@ -105,7 +97,6 @@ async def test_changes_to_unused_fields_do_not_break_search(
     assert response.json()["products"][0]["id"] == "10381"
 
 
-@_FAILS_TODAY
 async def test_missing_used_field_is_502_and_not_cached(
     client: AsyncClient, respx_mock: respx.MockRouter
 ) -> None:

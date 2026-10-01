@@ -34,7 +34,7 @@ Rama `011-upstream-schema-resilience`, base `main`. Estimación: **≈320 línea
   RF: RF-3, RF-4, RF-5; H3.
   Hecho cuando: los tests nuevos están en verde y la suite completa sigue en verde (el caso de `unit_price` de T1 sigue en `xfail`: ahora da `500` por `AlgoliaResponseInvalid` sin traducir).
 
-- [ ] **T4 — `product_search.py`: `AlgoliaResponseInvalid` ⇒ `502` sin cache**
+- [x] **T4 — `product_search.py`: `AlgoliaResponseInvalid` ⇒ `502` sin cache**
   `search_products` traduce `AlgoliaResponseInvalid` a `UpstreamUnavailableError` (la ruta ya responde `502`); la excepción sale antes de construir la respuesta, así que no se escribe en cache (D4).
   RED: `tests/services/test_product_search_errors.py` — cliente que lanza `AlgoliaResponseInvalid` ⇒ `UpstreamUnavailableError` y `cache.set` no se llama.
   GREEN: añade la traducción. El caso de `unit_price` de T1 pasa a `502` y no cachea: **quita su `xfail`**.

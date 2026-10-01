@@ -38,7 +38,7 @@ Rama `010-operational-robustness`, base `main`. Estimación: **≈250 líneas** 
   RF: RF-6, RF-7.
   Hecho cuando: los tests nuevos están en verde y la suite completa sigue en verde.
 
-- [ ] **T5 — `main.py`: `GET /ready`**
+- [x] **T5 — `main.py`: `GET /ready`**
   Ruta en `main.py`, fuera del router de `/api/v1` (sin `X-API-Key`), con `Depends(get_cache_repository)`: `ping()` `True` ⇒ `200 {"status": "ready"}`; `False` ⇒ `503 {"status": "unavailable", "redis": "unreachable"}` con `JSONResponse` (D3). `/health` no cambia.
   RED: `tests/test_main.py` — sin `X-API-Key` y `dependency_overrides` con `ping` ⇒ `True`: `200 {"status": "ready"}`; con `ping` ⇒ `False`: `503` con ese cuerpo exacto, sin `redis://` ni `rediss://` en la respuesta; `GET /health` sigue en `200` aunque `ping` devuelva `False` (RF-8); `/openapi.json` incluye `/ready`.
   GREEN: añade la ruta.

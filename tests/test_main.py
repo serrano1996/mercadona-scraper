@@ -262,3 +262,60 @@ def test_unhandled_exception_returns_500_and_logs_traceback(
     # being unreachable — i.e. this test never touches the real Redis at
     # REDIS_URL, even when one is running locally (docker compose up).
     client.search.assert_awaited_once_with(term="leche", warehouse="mad1", page=1, page_size=50)
+
+
+def _cache_with_ping(available: bool) -> AsyncMock:
+    cache = AsyncMock(spec=CacheRepository)
+    cache.ping.return_value = available
+    return cache
+
+
+def test_ready_returns_200_when_redis_answers() -> None:
+    """T5 — 010-mercadona-scraper-operational-robustness, RF-6/RF-7: public
+    (no X-API-Key), like /health."""
+    app.dependency_overrides[get_cache_repository] = lambda: _cache_with_ping(True)
+    try:
+        with TestClient(app) as client:
+            response = client.get("/ready")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ready"}
+
+
+def test_ready_returns_503_without_leaking_redis_details() -> None:
+    """T5 — RF-7: unavailable Redis -> 503 with a fixed body; never the
+    Redis URL (an Upstash URL carries the password)."""
+    app.dependency_overrides[get_cache_repository] = lambda: _cache_with_ping(False)
+    try:
+        with TestClient(app) as client:
+            response = client.get("/ready")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 503
+    assert response.json() == {"status": "unavailable", "redis": "unreachable"}
+    assert "redis://" not in response.text
+    assert "rediss://" not in response.text
+
+
+def test_health_stays_200_when_redis_is_unavailable() -> None:
+    """T5 — RF-8: /health is the Docker liveness probe; an unavailable
+    dependency must not fail it (that is what /ready is for)."""
+    app.dependency_overrides[get_cache_repository] = lambda: _cache_with_ping(False)
+    try:
+        with TestClient(app) as client:
+            response = client.get("/health")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
+def test_openapi_documents_ready() -> None:
+    with TestClient(app) as client:
+        paths = client.get("/openapi.json").json()["paths"]
+
+    assert "/ready" in paths

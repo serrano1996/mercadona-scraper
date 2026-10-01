@@ -1,20 +1,13 @@
-"""Typed mirror of Mercadona's internal (undocumented) JSON shape.
+"""Typed mirror of Mercadona's internal (undocumented) search backend shape
+(Algolia hits; see Decision D7 in specs/001-mercadona-scraper-mvp/plan.md).
 
-Field types come from a live capture of https://tienda.mercadona.es/api/categories/72/
-(see tests/fixtures/mercadona_product_sample.json), not from Mercadona's own docs —
-there are none. Never expose these models directly through the public API (see
-app/models/product.py + app/mappers/), so a Mercadona-side rename doesn't break our
-contract silently.
+Field types come from live captures (tests/fixtures/mercadona_algolia_hit_sample.json),
+not from Mercadona's own docs — there are none. Never expose these models directly
+through the public API (see app/models/product.py + app/mappers/), so a Mercadona-side
+rename doesn't break our contract silently.
 """
 
 from pydantic import BaseModel
-
-
-class RawCategoryRef(BaseModel):
-    id: int
-    name: str
-    level: int
-    order: int
 
 
 class RawProductBadges(BaseModel):
@@ -57,35 +50,12 @@ class RawPriceInstructions(BaseModel):
     increment_bunch_amount: float
 
 
-class RawProduct(BaseModel):
-    id: str
-    slug: str
-    limit: int
-    badges: RawProductBadges
-    # Always null in every sampled product; real type unverified.
-    status: str | None
-    packaging: str | None
-    published: bool
-    share_url: str
-    thumbnail: str
-    categories: list[RawCategoryRef]
-    display_name: str
-    main_feature: str | None
-    # Always null in every sampled product; real type unverified.
-    unavailable_from: str | None
-    price_instructions: RawPriceInstructions
-    # Always empty in every sampled product; element type unverified.
-    unavailable_weekdays: list[int]
-    is_new_arrival: bool
-
-
 class RawAlgoliaCategoryNode(BaseModel):
     """Category breadcrumb node as returned by Algolia search hits.
 
-    Unlike RawCategoryRef (flat list from /api/categories/), this is a
-    self-referential tree — each level nests the next one under its own
+    A self-referential tree: each level nests the next one under its own
     `categories` key, absent entirely at the deepest level (see Decision D7
-    in plan.md).
+    in specs/001-mercadona-scraper-mvp/plan.md).
     """
 
     id: int
@@ -98,10 +68,9 @@ class RawAlgoliaCategoryNode(BaseModel):
 class RawAlgoliaProduct(BaseModel):
     """Product shape as returned by Mercadona's real search backend (Algolia).
 
-    A distinct shape from RawProduct (category-browse): no main_feature/
-    is_new_arrival, nested categories, plus brand/score/popularity_score/
-    objectID that Algolia adds for search ranking. See Decision D7 in
-    plan.md for how these get fetched.
+    Nested categories, plus brand/score/popularity_score/objectID that
+    Algolia adds for search ranking. See Decision D7 in
+    specs/001-mercadona-scraper-mvp/plan.md for how these get fetched.
     """
 
     id: str

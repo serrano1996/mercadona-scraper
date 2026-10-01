@@ -58,3 +58,9 @@ async def test_get_missing_key_returns_none(redis_client: FakeAsyncRedis) -> Non
     result = await repo.get("does-not-exist")
 
     assert result is None
+
+
+async def test_ping_reports_available_redis(redis_client: FakeAsyncRedis) -> None:
+    """T4 — 010-mercadona-scraper-operational-robustness, RF-6: backs
+    GET /ready."""
+    assert await CacheRepository(redis_client).ping() is True

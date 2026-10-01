@@ -30,7 +30,7 @@ Rama `010-operational-robustness`, base `main`. Estimación: **≈250 líneas** 
   RF: RF-1, RF-2.
   Hecho cuando: los tests nuevos están en verde y la suite completa sigue en verde (los dobles `_FreshFakeRedisFactory` y `_BrokenRedisFactory` ya aceptan `**kwargs`).
 
-- [ ] **T4 — `services/cache.py`: `CacheRepository.ping()`**
+- [x] **T4 — `services/cache.py`: `CacheRepository.ping()`**
   `async def ping(self) -> bool`: `PING` a Redis; ante cualquier `RedisError` (incluido `redis.exceptions.TimeoutError`) devuelve `False` y registra un `WARNING` con **solo el tipo de excepción**, nunca `str(exc)` ni la URL (D3, D5).
   RED: `tests/services/test_cache.py` — `ping()` con `fakeredis` ⇒ `True`. `tests/services/test_cache_resilience.py` — con un doble cuyo `ping` lanza `RedisConnectionError("connection refused to rediss://user:secret@host")` ⇒ `False`, un `WARNING` que contiene `ConnectionError` y no contiene `secret` ni `rediss://`; con `redis.exceptions.TimeoutError` ⇒ `False`.
   GREEN: implementa `ping`.

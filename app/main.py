@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = Settings()
     configure_logging(settings.LOG_LEVEL)
-    http_client = build_mercadona_http_client()
+    http_client = build_mercadona_http_client(settings.HTTP_TIMEOUT_SECONDS)
     redis_client = Redis.from_url(settings.REDIS_URL)
 
     app.state.settings = settings

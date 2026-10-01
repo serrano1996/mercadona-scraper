@@ -277,3 +277,19 @@ async def test_jitter_is_added_on_top_of_exponential_backoff(
 
     # base backoff for attempt 0 is RETRY_BASE_DELAY * 2**0 = 0.5, + jitter 0.15
     sleep_mock.assert_awaited_once_with(0.65)
+
+
+async def test_read_timeout_is_retried_like_any_transport_error(settings: Settings) -> None:
+    """T2 — 010-mercadona-scraper-operational-robustness, RF-5 (regression):
+    httpx timeouts are TransportError subclasses, so the spec 002 retry
+    policy already covers them and the service layer maps the final
+    failure to 502 — no code change needed, pinned here."""
+    with respx.mock(assert_all_called=True) as mock:
+        route = mock.get(MANIFEST_URL).mock(side_effect=httpx.ReadTimeout("read timed out"))
+
+        async with httpx.AsyncClient() as http_client:
+            client = MercadonaClient(http_client, settings)
+            with pytest.raises(httpx.ReadTimeout):
+                await client.search(term="leche", warehouse="mad1", page=1, page_size=50)
+
+    assert route.call_count == settings.RETRY_MAX_ATTEMPTS

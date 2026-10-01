@@ -5,6 +5,7 @@ dependencies (app/api/v1/products.py) to read."""
 import logging
 from unittest.mock import AsyncMock
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
@@ -72,6 +73,20 @@ def test_mercadona_client_uses_a_pooled_user_agent() -> None:
     with TestClient(app):
         http_client = app.state.mercadona_client._http_client
         assert http_client.headers["User-Agent"] in USER_AGENTS
+
+
+def test_lifespan_wires_default_http_timeout() -> None:
+    """T2 — 010-mercadona-scraper-operational-robustness, RF-4: same 5s as
+    httpx's implicit default, so nothing changes without configuration."""
+    with TestClient(app):
+        assert app.state.mercadona_client._http_client.timeout == httpx.Timeout(5.0)
+
+
+def test_lifespan_wires_configured_http_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("HTTP_TIMEOUT_SECONDS", "2")
+
+    with TestClient(app):
+        assert app.state.mercadona_client._http_client.timeout == httpx.Timeout(2.0)
 
 
 def test_lifespan_configures_logging(monkeypatch: pytest.MonkeyPatch) -> None:

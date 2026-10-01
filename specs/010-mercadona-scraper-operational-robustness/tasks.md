@@ -14,7 +14,7 @@ Rama `010-operational-robustness`, base `main`. Estimación: **≈250 líneas** 
   RF: RF-1, RF-4.
   Hecho cuando: los tests nuevos están en verde y la suite completa sigue en verde.
 
-- [ ] **T2 — `http_client_factory.py`: timeout explícito y configurable**
+- [x] **T2 — `http_client_factory.py`: timeout explícito y configurable**
   `build_mercadona_http_client(timeout_seconds: float)` crea el cliente con `timeout=httpx.Timeout(timeout_seconds)`; el `lifespan` de `main.py` le pasa `settings.HTTP_TIMEOUT_SECONDS` (D2). Actualiza las dos llamadas existentes de `tests/scrapers/test_http_client_factory.py`, que hoy la llaman sin argumentos.
   RED: `tests/scrapers/test_http_client_factory.py` — `build_mercadona_http_client(3.0).timeout == httpx.Timeout(3.0)`, y las cabeceras de spec 002 (User-Agent del pool, `Accept-Language`, `Referer`, `Origin`) siguen presentes. `tests/test_main.py` — tras el `lifespan`, el `httpx.AsyncClient` de `MercadonaClient` tiene `httpx.Timeout(5.0)` por defecto y `httpx.Timeout(2.0)` con `HTTP_TIMEOUT_SECONDS=2`. `tests/scrapers/test_mercadona_client_retry.py` — `respx` lanzando `httpx.ReadTimeout` en todos los intentos ⇒ `RETRY_MAX_ATTEMPTS` llamadas y error de transporte al final (RF-5; regresión, ya funciona: el timeout es `TransportError`).
   GREEN: cambia la firma y el `lifespan`.

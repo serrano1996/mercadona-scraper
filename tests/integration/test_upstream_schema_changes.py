@@ -85,10 +85,10 @@ def _selling_method_as_text(hit: dict[str, dict[str, object]]) -> None:
     "mutate",
     [
         _unchanged,
-        pytest.param(_without_popularity_score, marks=_FAILS_TODAY),
-        pytest.param(_without_object_id, marks=_FAILS_TODAY),
-        pytest.param(_without_badges_is_water, marks=_FAILS_TODAY),
-        pytest.param(_selling_method_as_text, marks=_FAILS_TODAY),
+        _without_popularity_score,
+        _without_object_id,
+        _without_badges_is_water,
+        _selling_method_as_text,
     ],
 )
 async def test_changes_to_unused_fields_do_not_break_search(

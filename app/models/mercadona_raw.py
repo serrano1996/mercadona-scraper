@@ -1,98 +1,49 @@
-"""Typed mirror of Mercadona's internal (undocumented) search backend shape
-(Algolia hits; see Decision D7 in specs/001-mercadona-scraper-mvp/plan.md).
+"""Typed mirror of the parts of Mercadona's internal (undocumented) search
+backend response (Algolia; see Decision D7 in specs/001-mercadona-scraper-mvp/plan.md)
+that this API actually consumes.
 
-Field types come from live captures (tests/fixtures/mercadona_algolia_hit_sample.json),
-not from Mercadona's own docs — there are none. Never expose these models directly
-through the public API (see app/models/product.py + app/mappers/), so a Mercadona-side
-rename doesn't break our contract silently.
+Spec 011: only fields the mapper reads are declared. Algolia hits carry many
+more (slug, badges, score, popularity_score, objectID...), but validating
+them made every search fail whenever Mercadona changed one the API never
+uses — verified on 2026-10-01, and Algolia already omits popularity_score
+unless attributesToRetrieve=* is sent. Pydantic ignores undeclared fields,
+so those changes are now harmless. The full upstream shape stays documented
+in tests/fixtures/mercadona_algolia_hit_sample.json (a live capture).
+
+Never expose these models directly through the public API (see
+app/models/product.py + app/mappers/), so a Mercadona-side rename doesn't
+break our contract silently.
 """
 
 from pydantic import BaseModel
 
 
-class RawProductBadges(BaseModel):
-    is_water: bool
-    requires_age_check: bool
-
-
 class RawPriceInstructions(BaseModel):
-    # Typed str | None from the first sample (always null there); a real
-    # request during T26's manual verification hit iva=10 (int). Sampling a
-    # whole real category confirmed it's always null or int, never a string.
-    iva: int | None
-    is_new: bool
-    is_pack: bool
-    pack_size: float | None
-    unit_name: str | None
-    unit_size: float
-    # Always present in every sampled product, but nullable per spec.md's
-    # "missing price-per-unit" edge case — not every Mercadona product is
-    # guaranteed to carry it (see app/mappers/product_mapper.py).
+    # Parsed as a number here (Mercadona sends "5.04"), so a non-numeric
+    # price fails validation instead of crashing later in the mapper
+    # (spec 011 RF-3, Decision D2).
+    unit_price: float
+    # Nullable: not every product carries a per-unit price (spec 001
+    # caso limite "sin precio por unidad"). Used verbatim in price_format.
     bulk_price: str | None
-    unit_price: str
-    approx_size: bool
-    size_format: str
-    total_units: int | None
-    unit_selector: bool
-    bunch_selector: bool
-    # Always null in every sampled product; real type unverified.
-    drained_weight: float | None
-    selling_method: int
-    tax_percentage: str
-    price_decreased: bool
-    reference_price: str
-    min_bunch_amount: float
-    # Same nullability note as bulk_price above.
     reference_format: str | None
-    # Sometimes comes with leading whitespace from Mercadona's own API
-    # (e.g. "        7.02") — keep raw here, clean up in the mapper (T6).
-    previous_unit_price: str | None
-    increment_bunch_amount: float
 
 
-class RawAlgoliaCategoryNode(BaseModel):
-    """Category breadcrumb node as returned by Algolia search hits.
+class RawAlgoliaCategory(BaseModel):
+    """Only the name is used (first category of a hit). Algolia nests a
+    category tree under `categories`; it's not modelled (spec 011 D1)."""
 
-    A self-referential tree: each level nests the next one under its own
-    `categories` key, absent entirely at the deepest level (see Decision D7
-    in specs/001-mercadona-scraper-mvp/plan.md).
-    """
-
-    id: int
     name: str
-    level: int
-    order: int
-    categories: list["RawAlgoliaCategoryNode"] = []
 
 
 class RawAlgoliaProduct(BaseModel):
-    """Product shape as returned by Mercadona's real search backend (Algolia).
-
-    Nested categories, plus brand/score/popularity_score/objectID that
-    Algolia adds for search ranking. See Decision D7 in
-    specs/001-mercadona-scraper-mvp/plan.md for how these get fetched.
-    """
+    """One Algolia search hit, reduced to the fields mapped to ProductOut."""
 
     id: str
-    slug: str
-    limit: int
-    badges: RawProductBadges
-    status: str | None
-    packaging: str | None
-    published: bool
-    share_url: str
-    thumbnail: str
-    categories: list[RawAlgoliaCategoryNode]
     display_name: str
-    unavailable_from: str | None
+    thumbnail: str
+    categories: list[RawAlgoliaCategory]
     price_instructions: RawPriceInstructions
-    unavailable_weekdays: list[int]
-    # Present for every sampled hit, but a generic/unbranded product is a
-    # plausible real-world case we haven't observed — kept nullable.
-    brand: str | None
-    score: float
-    popularity_score: int
-    objectID: str
 
 
 class RawAlgoliaSearchResult(BaseModel):

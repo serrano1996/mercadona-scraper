@@ -1,14 +1,14 @@
 """RawAlgoliaProduct / RawAlgoliaSearchResult must validate the real shape of
 Mercadona's search backend (Algolia). The hit fixture was captured live
-(2026-09-16), not fabricated, so the DTO reflects the real undocumented
-shape (constitution #2/#5).
+(2026-09-16), not fabricated (constitution #2/#5).
 
-The null-unit-fields and integer-iva cases were first pinned on RawProduct
-(the pre-Algolia category-browse model, removed as dead code); they live
-here now because RawPriceInstructions is the same model in both shapes.
+Spec 011: the models declare only the fields the API maps, so a change in
+any other field — verified to break every search before — no longer
+matters. The fixture still documents the full upstream shape.
 """
 
 import json
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -22,7 +22,7 @@ ALGOLIA_HIT_FIXTURE_PATH = (
 )
 
 
-def _algolia_hit() -> dict[str, object]:
+def _algolia_hit() -> dict[str, dict[str, object]]:
     return json.loads(ALGOLIA_HIT_FIXTURE_PATH.read_text(encoding="utf-8"))
 
 
@@ -34,30 +34,63 @@ def test_raw_algolia_product_validates_real_sample() -> None:
     assert product.categories[0].name == "Huevos, leche y mantequilla"
 
 
-def test_raw_algolia_product_allows_null_price_unit_fields() -> None:
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        lambda hit: hit.pop("popularity_score"),
+        lambda hit: hit.pop("objectID"),
+        lambda hit: hit.pop("badges"),
+        lambda hit: hit["price_instructions"].update(selling_method="kg"),
+        lambda hit: hit["price_instructions"].update(iva="not-an-int"),
+        lambda hit: hit.update(brand_new_upstream_field={"x": 1}),
+    ],
+    ids=[
+        "no-popularity_score",
+        "no-objectID",
+        "no-badges",
+        "selling_method-as-text",
+        "iva-as-text",
+        "new-unknown-field",
+    ],
+)
+def test_changes_to_unused_fields_still_validate(
+    mutate: Callable[[dict[str, dict[str, object]]], object],
+) -> None:
+    """T2 — 011-mercadona-scraper-upstream-schema-resilience, RF-1/RF-2:
+    the cases that broke every search during the spec 011 investigation."""
     hit = _algolia_hit()
-    hit["price_instructions"]["unit_name"] = None
-    hit["price_instructions"]["pack_size"] = None
-    hit["price_instructions"]["total_units"] = None
+    mutate(hit)
 
     product = RawAlgoliaProduct.model_validate(hit)
 
-    assert product.price_instructions.unit_name is None
-    assert product.price_instructions.pack_size is None
-    assert product.price_instructions.total_units is None
+    assert product.id == "10381"
 
 
-def test_raw_algolia_product_allows_integer_iva() -> None:
-    """Regression: an early fixture only ever saw iva=null, so the field was
-    typed str | None; a real live product had iva=10 (int) and failed
-    validation. Sampling a whole real category confirmed iva is always null
-    or int, never a string (spec 001, T26 verification notes)."""
+def test_unit_price_is_parsed_as_a_number() -> None:
+    """T2 — Decision D2: Mercadona sends "5.04"; parsing it in validation
+    means a non-numeric price fails here, not later in the mapper."""
+    product = RawAlgoliaProduct.model_validate(_algolia_hit())
+
+    assert product.price_instructions.unit_price == 5.04
+
+
+@pytest.mark.parametrize("bad_value", ["abc", None])
+def test_invalid_unit_price_fails_validation(bad_value: object) -> None:
+    """T2 — RF-3: unit_price is a used field; an unusable value is a
+    validation error (turned into 502 by T3/T4), not a crash later."""
     hit = _algolia_hit()
-    hit["price_instructions"]["iva"] = 10
+    hit["price_instructions"]["unit_price"] = bad_value
 
-    product = RawAlgoliaProduct.model_validate(hit)
+    with pytest.raises(ValidationError):
+        RawAlgoliaProduct.model_validate(hit)
 
-    assert product.price_instructions.iva == 10
+
+def test_missing_unit_price_fails_validation() -> None:
+    hit = _algolia_hit()
+    hit["price_instructions"].pop("unit_price")
+
+    with pytest.raises(ValidationError):
+        RawAlgoliaProduct.model_validate(hit)
 
 
 def _algolia_result(**overrides: object) -> dict[str, object]:

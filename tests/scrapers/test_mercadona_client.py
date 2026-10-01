@@ -74,7 +74,6 @@ async def test_search_returns_parsed_products(settings: Settings) -> None:
     assert len(products) == 1
     assert products[0].id == "10381"
     assert products[0].display_name == "Leche semidesnatada Hacendado"
-    assert products[0].brand == "Hacendado"
     assert products[0].categories[0].name == "Huevos, leche y mantequilla"
 
 

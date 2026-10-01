@@ -18,7 +18,7 @@ Rama `011-upstream-schema-resilience`, base `main`. Estimación: **≈320 línea
   RF: RF-1, RF-3; H1, H2.
   Hecho cuando: el fichero existe, la línea base pasa, los cinco casos están en `xfail` estricto, y la suite completa sigue en verde.
 
-- [ ] **T2 — `mercadona_raw.py` + mapper: modelos reducidos y `unit_price: float`**
+- [x] **T2 — `mercadona_raw.py` + mapper: modelos reducidos y `unit_price: float`**
   Modelos según plan.md §2: `RawPriceInstructions` con `unit_price: float`, `bulk_price: str | None`, `reference_format: str | None`; `RawAlgoliaCategory` con solo `name` (sustituye a `RawAlgoliaCategoryNode`); `RawAlgoliaProduct` con `id`, `display_name`, `thumbnail`, `categories`, `price_instructions`; se elimina `RawProductBadges` y el resto de campos (D1, D2). El mapper usa `raw.price_instructions.unit_price` sin `float(...)`. Docstring del módulo: la forma completa está en la fixture real.
   RED: `tests/models/test_mercadona_raw.py` — la fixture real valida; valida igual sin `popularity_score`, sin `objectID`, sin `badges`, con `selling_method = "kg"` y con un campo nuevo desconocido; `unit_price` `"5.04"` ⇒ `5.04`, `"abc"` ⇒ `ValidationError`, ausente ⇒ `ValidationError`. Sustituye los tests de `iva` entero y de campos de unidad a `null` (esos campos dejan de existir; el caso "campo no usado con otro tipo" cubre el riesgo de forma general).
   GREEN: reduce los modelos y ajusta el mapper. Quita la aserción de `brand` en `tests/scrapers/test_mercadona_client.py`. Los cuatro casos de campos no usados de T1 pasan a verde: **quita su `xfail`** (si no, fallan por `XPASS(strict)`).

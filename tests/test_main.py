@@ -9,13 +9,13 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
-from app.api.v1.products import (
+from app.core.config import Settings
+from app.core.dependencies import (
     get_cache_repository,
     get_mercadona_client,
     get_settings,
     get_warehouse_cache_repository,
 )
-from app.core.config import Settings
 from app.main import app
 from app.scrapers.http_client_factory import USER_AGENTS
 from app.scrapers.mercadona_client import MercadonaClient

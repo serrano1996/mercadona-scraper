@@ -22,14 +22,6 @@ from app.services.cache import CacheRepository, WarehouseCacheRepository
 from app.services.product_search import search_products
 from app.services.warehouse_resolver import resolve_warehouse
 
-__all__ = [
-    "get_cache_repository",
-    "get_mercadona_client",
-    "get_settings",
-    "get_warehouse_cache_repository",
-    "router",
-]
-
 logger = logging.getLogger(__name__)
 
 router = APIRouter()

@@ -32,8 +32,11 @@ def verify_api_key(
     # constant-time, so a mismatch doesn't leak timing information about
     # how many leading characters matched (RF-4). Same 401/detail for
     # "missing" and "invalid" (RF-2/RF-3) — no hint to a guesser.
+    # Compared as bytes: compare_digest raises TypeError on non-ASCII str,
+    # and Starlette decodes headers as latin-1.
     if not api_key or not any(
-        secrets.compare_digest(api_key, valid_key) for valid_key in settings.api_keys
+        secrets.compare_digest(api_key.encode(), valid_key.encode())
+        for valid_key in settings.api_keys
     ):
         # Never log `api_key` itself (plan.md Decision D5, spec.md RF-6) —
         # only the path, same as T7-T9 of spec 003 never logging secrets.

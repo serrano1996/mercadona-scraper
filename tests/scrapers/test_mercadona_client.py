@@ -3,6 +3,7 @@ extracting credentials from a legacy bundle Mercadona still serves (see
 Decision D7 in plan.md). All shapes here are real, captured live on
 2026-09-16, not fabricated."""
 
+import asyncio
 import json
 import logging
 from pathlib import Path
@@ -124,6 +125,61 @@ async def test_second_search_reuses_cached_algolia_credentials(settings: Setting
 
     assert manifest_route.call_count == 1
     assert bundle_route.call_count == 1
+
+
+async def test_concurrent_first_searches_fetch_credentials_once(settings: Settings) -> None:
+    """Concurrent searches on a cold client share one credentials download
+    instead of each fetching the manifest and bundle."""
+
+    async def slow_manifest(request: httpx.Request) -> httpx.Response:
+        # Yield so the other searches start while this download is in flight.
+        await asyncio.sleep(0.01)
+        return httpx.Response(200, json=MANIFEST_PAYLOAD)
+
+    with respx.mock(assert_all_called=True) as mock:
+        manifest_route = mock.get("https://tienda.mercadona.es/asset-manifest.json").mock(
+            side_effect=slow_manifest
+        )
+        bundle_route = mock.get(BUNDLE_URL).mock(
+            return_value=httpx.Response(200, text=BUNDLE_JS_WITH_CREDENTIALS)
+        )
+        mock.post(f"https://{FAKE_APP_ID}-dsn.algolia.net/1/indexes/*/queries").mock(
+            return_value=httpx.Response(200, json=_algolia_response_with_one_hit())
+        )
+
+        async with httpx.AsyncClient() as http_client:
+            client = MercadonaClient(http_client, settings)
+            await asyncio.gather(
+                *(
+                    client.search(term=term, warehouse="mad1", page=1, page_size=50)
+                    for term in ("leche", "agua", "pan")
+                )
+            )
+
+    assert manifest_route.call_count == 1
+    assert bundle_route.call_count == 1
+
+
+@pytest.mark.parametrize(
+    "manifest_response",
+    [
+        httpx.Response(200, json={"other.js": "/x.js"}),
+        httpx.Response(200, text="<html>not json</html>"),
+        httpx.Response(200, json=["main.js"]),
+    ],
+)
+async def test_search_raises_when_manifest_has_no_main_js(
+    settings: Settings, manifest_response: httpx.Response
+) -> None:
+    with respx.mock(assert_all_called=True) as mock:
+        mock.get("https://tienda.mercadona.es/asset-manifest.json").mock(
+            return_value=manifest_response
+        )
+
+        async with httpx.AsyncClient() as http_client:
+            client = MercadonaClient(http_client, settings)
+            with pytest.raises(AlgoliaCredentialsUnavailable):
+                await client.search(term="leche", warehouse="mad1", page=1, page_size=50)
 
 
 async def test_search_retries_once_with_fresh_credentials_after_401(

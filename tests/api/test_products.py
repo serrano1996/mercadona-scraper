@@ -10,14 +10,14 @@ import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 
-from app.api.v1.products import (
+from app.api.v1.products import router
+from app.core.config import Settings
+from app.core.dependencies import (
     get_cache_repository,
     get_mercadona_client,
     get_settings,
     get_warehouse_cache_repository,
-    router,
 )
-from app.core.config import Settings
 from app.models.mercadona_raw import RawAlgoliaProduct
 from app.scrapers.mercadona_client import MercadonaClient
 from app.services.cache import CacheRepository, WarehouseCacheRepository

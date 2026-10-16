@@ -95,10 +95,10 @@ def test_any_of_multiple_configured_tokens_is_accepted(
 def test_comparison_uses_compare_digest(
     settings: Settings, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    calls: list[tuple[str, str]] = []
+    calls: list[tuple[bytes, bytes]] = []
     original = security.secrets.compare_digest
 
-    def spy(a: str, b: str) -> bool:
+    def spy(a: bytes, b: bytes) -> bool:
         calls.append((a, b))
         return original(a, b)
 
@@ -107,7 +107,16 @@ def test_comparison_uses_compare_digest(
     verify_api_key(request=_make_request(), api_key="valid-token", settings=settings)
 
     assert calls
-    assert all(call == ("valid-token", "valid-token") for call in calls)
+    assert all(call == (b"valid-token", b"valid-token") for call in calls)
+
+
+def test_non_ascii_token_raises_401_not_type_error(settings: Settings) -> None:
+    """Starlette decodes headers as latin-1, so a header byte like 0xE9
+    arrives as "é"; compare_digest on non-ASCII str would raise TypeError."""
+    with pytest.raises(HTTPException) as exc_info:
+        verify_api_key(request=_make_request(), api_key="é", settings=settings)
+
+    assert exc_info.value.status_code == 401
 
 
 @pytest.fixture

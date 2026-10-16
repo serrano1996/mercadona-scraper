@@ -10,7 +10,11 @@ import pytest
 from app.core.config import Settings
 from app.exceptions import UpstreamUnavailableError
 from app.models.query import ProductQuery
-from app.scrapers.mercadona_client import AlgoliaResponseInvalid, MercadonaClient
+from app.scrapers.mercadona_client import (
+    AlgoliaCredentialsUnavailable,
+    AlgoliaResponseInvalid,
+    MercadonaClient,
+)
 from app.services.cache import CacheRepository
 from app.services.product_search import search_products
 
@@ -35,6 +39,31 @@ async def test_raises_domain_error_after_5xx_retries_exhausted() -> None:
     cache.get.return_value = None
     client = AsyncMock(spec=MercadonaClient)
     client.search.side_effect = _http_status_error(503)
+    query = ProductQuery(postal_code="28001", term="leche")
+
+    with pytest.raises(UpstreamUnavailableError):
+        await search_products(
+            query, warehouse="mad1", cache=cache, client=client, settings=_settings()
+        )
+
+    cache.set.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        AlgoliaCredentialsUnavailable("bundle taken down"),
+        _http_status_error(401),
+        _http_status_error(403),
+    ],
+)
+async def test_dead_algolia_credentials_become_upstream_unavailable(error: Exception) -> None:
+    """The legacy bundle gone, or Algolia still rejecting freshly-fetched
+    keys, is Mercadona's failure (502), not an internal error (500)."""
+    cache = AsyncMock(spec=CacheRepository)
+    cache.get.return_value = None
+    client = AsyncMock(spec=MercadonaClient)
+    client.search.side_effect = error
     query = ProductQuery(postal_code="28001", term="leche")
 
     with pytest.raises(UpstreamUnavailableError):

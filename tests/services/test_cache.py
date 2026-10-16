@@ -41,6 +41,14 @@ def sample_response() -> ProductSearchResponse:
     )
 
 
+async def test_entry_with_outdated_schema_is_a_miss(redis_client: FakeAsyncRedis) -> None:
+    """An entry written before a schema change reads as a miss, not a 500."""
+    await redis_client.set("search:mad1:leche:1:50", '{"products": []}')
+    repo = CacheRepository(redis_client)
+
+    assert await repo.get("search:mad1:leche:1:50") is None
+
+
 async def test_set_then_get_returns_same_object(
     redis_client: FakeAsyncRedis, sample_response: ProductSearchResponse
 ) -> None:

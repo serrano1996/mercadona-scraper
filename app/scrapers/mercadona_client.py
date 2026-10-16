@@ -125,6 +125,7 @@ class MercadonaClient:
         # if Mercadona redeploys the legacy bundle, not per search — avoids
         # 2 extra HTTP round trips (manifest + bundle) on every call.
         self._algolia_credentials: tuple[str, str, str] | None = None
+        self._credentials_lock = asyncio.Lock()
 
     async def resolve_warehouse(self, postal_code: str) -> str | None:
         """Resolves the Mercadona warehouse ("wh") a postal_code belongs to,
@@ -224,14 +225,26 @@ class MercadonaClient:
         )
 
     async def _get_algolia_credentials(self) -> tuple[str, str, str]:
-        if self._algolia_credentials is not None:
+        # Lock: concurrent first searches (startup, or after a 401) would
+        # otherwise each download the bundle — a burst that looks like a bot.
+        async with self._credentials_lock:
+            if self._algolia_credentials is None:
+                self._algolia_credentials = await self._fetch_algolia_credentials()
             return self._algolia_credentials
 
+    async def _fetch_algolia_credentials(self) -> tuple[str, str, str]:
         manifest_response = await self._request_with_retry(
             "GET", f"{self._settings.MERCADONA_BASE_URL}/asset-manifest.json"
         )
         manifest_response.raise_for_status()
-        main_js_path = manifest_response.json()["main.js"]
+        try:
+            main_js_path = manifest_response.json()["main.js"]
+        except (ValueError, KeyError, TypeError) as exc:
+            # Same failure as a bundle without credentials: the legacy
+            # manifest changed shape or was taken down (Decision D7).
+            raise AlgoliaCredentialsUnavailable(
+                "Mercadona's asset-manifest.json has no main.js entry"
+            ) from exc
 
         bundle_url = f"{self._settings.MERCADONA_BASE_URL}{main_js_path}"
         bundle_response = await self._request_with_retry("GET", bundle_url)
@@ -247,12 +260,11 @@ class MercadonaClient:
                 "Could not find Algolia credentials in Mercadona's legacy bundle; "
                 "it may have been taken down (see Decision D7 in plan.md)."
             )
-        self._algolia_credentials = (
+        return (
             app_id_match.group(1),
             api_key_match.group(1),
             index_prefix_match.group(1),
         )
-        return self._algolia_credentials
 
     async def _request_with_retry(
         self,

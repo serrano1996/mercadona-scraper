@@ -1,6 +1,7 @@
 import logging
 from dataclasses import dataclass
 
+from pydantic import ValidationError
 from redis.asyncio import Redis
 from redis.exceptions import RedisError
 
@@ -21,7 +22,12 @@ class CacheRepository:
             return None
         if raw is None:
             return None
-        return ProductSearchResponse.model_validate_json(raw)
+        try:
+            return ProductSearchResponse.model_validate_json(raw)
+        except ValidationError:
+            # Written by a deploy with an older schema: a miss, not a 500.
+            logger.warning("Discarding cache entry with outdated schema for key %s", key)
+            return None
 
     async def set(self, key: str, value: ProductSearchResponse, ttl: int) -> None:
         try:

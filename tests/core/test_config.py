@@ -135,6 +135,16 @@ def test_timeouts_env_overrides_defaults(
     assert settings.HTTP_TIMEOUT_SECONDS == 2.5
 
 
+def test_zero_retry_attempts_is_rejected(
+    required_env: None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """0 attempts would send no request at all; fail at startup instead."""
+    monkeypatch.setenv("RETRY_MAX_ATTEMPTS", "0")
+
+    with pytest.raises(ValidationError):
+        Settings()
+
+
 @pytest.mark.parametrize("variable", ["REDIS_TIMEOUT_SECONDS", "HTTP_TIMEOUT_SECONDS"])
 @pytest.mark.parametrize("value", ["0", "-1"])
 def test_non_positive_timeouts_are_rejected(

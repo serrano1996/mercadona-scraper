@@ -7,7 +7,11 @@ from app.exceptions import PageOutOfRangeError, UpstreamUnavailableError
 from app.mappers.product_mapper import map_raw_algolia_product_to_product_out
 from app.models.product import ProductSearchResponse, SearchMeta
 from app.models.query import ProductQuery
-from app.scrapers.mercadona_client import AlgoliaResponseInvalid, MercadonaClient
+from app.scrapers.mercadona_client import (
+    AlgoliaCredentialsUnavailable,
+    AlgoliaResponseInvalid,
+    MercadonaClient,
+)
 from app.services.cache import CacheRepository
 
 _STRATEGY_USED = "algolia"
@@ -43,7 +47,9 @@ async def search_products(
     except httpx.TransportError as exc:
         raise UpstreamUnavailableError("Mercadona/Algolia is unreachable") from exc
     except httpx.HTTPStatusError as exc:
-        if exc.response.status_code >= 500 or exc.response.status_code == 429:
+        # 401/403 only reach here after MercadonaClient already retried with
+        # freshly-fetched credentials: the upstream keys are dead, not our bug.
+        if exc.response.status_code >= 500 or exc.response.status_code in (401, 403, 429):
             raise UpstreamUnavailableError(
                 f"Mercadona/Algolia returned {exc.response.status_code}"
             ) from exc
@@ -53,6 +59,8 @@ async def search_products(
         # failure (502), raised before anything is cached (spec 011
         # RF-3/RF-4, Decision D4).
         raise UpstreamUnavailableError("Mercadona/Algolia returned an invalid response") from exc
+    except AlgoliaCredentialsUnavailable as exc:
+        raise UpstreamUnavailableError("Algolia credentials are unavailable") from exc
     if query.page > 1 and not result.hits:
         # Algolia answers an out-of-range page with nbHits 0, so the total
         # can't tell "no results" from "past the last page" (spec 008 RF-9,

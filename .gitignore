@@ -40,4 +40,12 @@ Thumbs.db
 
 # Atlas/SDD local cache (keep skill-registry.md tracked)
 .atl/.skill-registry.cache.json
-graphify-out/
+
+# graphify knowledge graph: share the graph, keep machine-local state out
+# (.graphify_python/.graphify_root hold absolute paths; cache/ is rebuildable;
+# graph.html is regenerated with `graphify export html`).
+graphify-out/*
+!graphify-out/graph.json
+!graphify-out/GRAPH_REPORT.md
+!graphify-out/manifest.json
+!graphify-out/.graphify_labels.json

@@ -40,3 +40,4 @@ Thumbs.db
 
 # Atlas/SDD local cache (keep skill-registry.md tracked)
 .atl/.skill-registry.cache.json
+graphify-out/
